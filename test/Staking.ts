@@ -62,16 +62,16 @@ describe("StakingRewards", function () {
         //     const { staker1, staker2, deployedStaking } = await loadFixture(deploy60daysStakingRewardsFixture);
         //     const {} = await loadFixture(notifyNativeRewardAmountStaking);
 
-        //     deployedStaking.connect(staker1).stake(10);
+        //     await deployedStaking.connect(staker1).stake(10);
 
         //     time.increaseTo((await deployedStaking._nativePeriodFinish()) - 25n);
 
-        //     deployedStaking.connect(staker2).stake(10);
+        //     await deployedStaking.connect(staker2).stake(10);
 
         //     time.increaseTo((await deployedStaking._nativePeriodFinish()));
 
-        //     deployedStaking.connect(staker1).vest(10);
-        //     deployedStaking.connect(staker2).vest(10);
+        //     await deployedStaking.connect(staker1).vest(1);
+        //     await deployedStaking.connect(staker2).vest(1);
             
         // })
 

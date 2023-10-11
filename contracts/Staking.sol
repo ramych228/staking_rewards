@@ -123,11 +123,9 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
         return
             (nativeMultiplierStored *
                 (
-                    (((lastTimeNativeRewardApplicable() -
-                        nativeLastUpdateTime) * nativeRewardRate) +
-                        totalSupplyLP +
-                        totalSupplyST)
-                )) / (totalSupplyLP + totalSupplyST);
+                    1 + (((lastTimeNativeRewardApplicable() -
+                        nativeLastUpdateTime) * nativeRewardRate)
+                )) / (totalSupplyLP + totalSupplyST));
     }
 
     function getTokenMultiplier() public view returns (uint256) {
@@ -146,6 +144,11 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
     }
 
     function tokenEarned(address account) public view returns (uint256) {
+        console.log("\n", "<-------earned------->");
+        console.log("balanceLP[acc]: ", balanceLP[account]);
+        console.log("userBP[acc]: ", userBonusPoints[account]);
+        console.log("st[acc]: ", balanceStakingToken[account]);
+        console.log("<------end-earned------->");
         return
             ((balanceLP[account] +
                 balanceStakingToken[account] +
@@ -210,8 +213,8 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
         uint256 reward = rewards[msg.sender];
         if (reward > 0) {
             rewards[msg.sender] = 0;
-            rewardsToken.safeTransfer(msg.sender, reward);
-            emit RewardPaid(msg.sender, reward);
+            rewardsToken.safeTransfer(msg.sender, reward / AMOUNT_MULTIPLIER);
+            emit RewardPaid(msg.sender, reward / AMOUNT_MULTIPLIER);
         }
     }
 
@@ -222,7 +225,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 
         uint256 balance = balanceStakingToken[msg.sender];
 
-        require(amount > balance, "Cannot vest more then balance");
+        require(amount <= balance, "Cannot vest more then balance");
         require(
             amount * 10 < balanceLP[msg.sender],
             "You should have more staked LP tokens"
@@ -347,7 +350,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
         nativeLastUpdateTime = lastTimeNativeRewardApplicable();
 
         if (account != address(0)) {
-            balanceStakingToken[account] = nativeEarned(account);
+            balanceStakingToken[account] = nativeEarned(account) - balanceLP[account];
             userNativeMultiplierPaid[account] = nativeMultiplierStored;
 
             totalSupplyST +=
@@ -367,6 +370,15 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
         // );
         // console.log("lp balance:", balanceLP[account]);
         // console.log("<--------------------------->");
+
+        _;
+    }
+
+    modifier updateReward(address account) {
+        tokenMultiplierStored = getTokenMultiplier();
+        tokenLastUpdateTime = lastTimeTokenRewardApplicable();
+
+        
 
         _;
     }
