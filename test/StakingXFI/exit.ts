@@ -12,7 +12,7 @@ export const exit = function () {
 
 	it('calls updateReward() with msg.sender as a parameter', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewards)
 
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
@@ -46,7 +46,7 @@ export const exit = function () {
 	it('calls getReward()', async function () {
 		const { signers, staking, stakingToken, rewardToken } = await getStakingContractsWithStakersAndRewards()
 		/* --- Setup rewards --- */
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards)

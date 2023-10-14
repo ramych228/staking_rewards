@@ -19,7 +19,7 @@ export const rewardPerToken = function () {
 
 	it('after stakes and right after notify equals 0', async function () {
 		const { staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewardsAmount)
 
 		const rewardPerToken = await staking.rewardPerToken()
@@ -39,7 +39,7 @@ export const rewardPerToken = function () {
 	it.skip('after stakes and some time after notify', async function () {
 		const { staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewardsAmount)
 
 		const tokenRewardRate = await staking.tokenRewardRate()
@@ -59,7 +59,7 @@ export const rewardPerToken = function () {
 
 	it('if there is no time last after lastUpdate then rewardPerToken should stay the same', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewardsAmount)
 
 		await time.increase(1000)
@@ -74,7 +74,7 @@ export const rewardPerToken = function () {
 
 	it.skip('after notify and 1000s and withdraw', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewardsAmount)
 
 		await time.increase(1000)
@@ -87,7 +87,7 @@ export const rewardPerToken = function () {
 
 	it.skip('after notify and 1000s and new stake and 1000s', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewardsAmount)
 
 		await time.increase(1000)
@@ -101,7 +101,7 @@ export const rewardPerToken = function () {
 
 	it.skip('after notify and 1000s and withdraw and 1000s', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewardsAmount)
 
 		await time.increase(1000)
@@ -115,7 +115,7 @@ export const rewardPerToken = function () {
 
 	it.skip('after notify and 1000s and withdraw and 1000s', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewardsAmount)
 
 		await time.increase(1000)
@@ -129,7 +129,7 @@ export const rewardPerToken = function () {
 
 	it('can be calculated on every time', async function () {
 		const { staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewardsAmount)
 
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
@@ -202,7 +202,7 @@ export const rewardPerToken = function () {
 
 	it('can be calculated on every time with changing stakes', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewardsAmount)
 
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
@@ -259,7 +259,7 @@ export const rewardPerToken = function () {
 
 	it('equals reward divided on totalSupplyLP if stakes didn`t change', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewardsAmount)
 
 		const totalSupplyLP = await staking.totalSupplyLP()

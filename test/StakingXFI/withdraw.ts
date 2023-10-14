@@ -10,7 +10,7 @@ export const withdraw = function () {
 
 	it('calls updateReward() with msg.sender as a parameter', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewards)
 
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
@@ -121,7 +121,7 @@ export const withdraw = function () {
 
 	it('after full withdrawal user doesn`t get any more rewards', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewards)
 
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
@@ -138,7 +138,7 @@ export const withdraw = function () {
 
 	it('after partial withdrawal user gets less rewards', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewards)
 
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()

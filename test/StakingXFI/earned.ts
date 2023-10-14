@@ -12,7 +12,7 @@ export const tokenEarned = function () {
 	it('calculates rewards for every staker according to their stake', async function () {
 		const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards)
@@ -37,7 +37,7 @@ export const tokenEarned = function () {
 	it('calculates rewards for every staker according to their stake in situation with increasing stakes', async function () {
 		const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards)
@@ -84,7 +84,7 @@ export const tokenEarned = function () {
 	it('called after rewards finished returns same rewards as called at the end of distribution', async function () {
 		const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOfd(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards)

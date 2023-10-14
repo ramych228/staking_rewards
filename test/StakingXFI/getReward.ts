@@ -14,7 +14,7 @@ export const getReward = function () {
 
 		/* --- Setup rewards --- */
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards)
@@ -33,7 +33,7 @@ export const getReward = function () {
 	it('returns no rewards if there is none for user', async function () {
 		const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards)
@@ -44,13 +44,13 @@ export const getReward = function () {
 		await expect(tx).not.to.emit(staking, 'RewardPaid')
 
 		expect(await staking.tokenEarned(signers[9].address)).to.be.eq(0)
-		expect(await rewardToken.balanceLPOf(signers[9].address)).to.be.eq(0)
+		expect(await rewardToken.balanceOf(signers[9].address)).to.be.eq(0)
 	})
 
 	it('makes rewards = 0', async function () {
 		const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards)
@@ -67,7 +67,7 @@ export const getReward = function () {
 	it('makes transfer', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards)
@@ -83,7 +83,7 @@ export const getReward = function () {
 	it('emits event RewardPaid', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards)
@@ -100,7 +100,7 @@ export const getReward = function () {
 	it('double withdraw of rewards will not get user more than he should get', async function () {
 		const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards)
@@ -109,22 +109,22 @@ export const getReward = function () {
 
 		// Called to update 'rewards' mapping
 		await staking.connect(signers[1]).getReward()
-		const balanceBefore = await rewardToken.balanceLPOf(signers[1].address)
+		const balanceBefore = await rewardToken.balanceOf(signers[1].address)
 		// await staking.connect(signers[1]).getReward()
 
 		// Rewards must be already updated, so tokenEarned() must return 0
 		await staking.connect(signers[1]).getReward()
-		const balanceAfter = await rewardToken.balanceLPOf(signers[1].address)
+		const balanceAfter = await rewardToken.balanceOf(signers[1].address)
 
 		expect(balanceBefore).to.be.eq(balanceAfter)
 
-		// expect(await rewardToken.balanceLPOf(signers[9].address)).to.be.eq(0)
+		// expect(await rewardToken.balanceOf(signers[9].address)).to.be.eq(0)
 	})
 
 	it('being called right after stake returns no or almost no rewards (depends on time passed)', async function () {
 		const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards)
@@ -133,22 +133,22 @@ export const getReward = function () {
 
 		// Called to update 'rewards' mapping
 		await staking.connect(signers[1]).getReward()
-		const balanceBefore = await rewardToken.balanceLPOf(signers[1].address)
+		const balanceBefore = await rewardToken.balanceOf(signers[1].address)
 		// await staking.connect(signers[1]).getReward()
 
 		// Rewards must be already updated, so tokenEarned() must return 0
 		await staking.connect(signers[1]).getReward()
-		const balanceAfter = await rewardToken.balanceLPOf(signers[1].address)
+		const balanceAfter = await rewardToken.balanceOf(signers[1].address)
 
 		expect(balanceBefore).to.be.eq(balanceAfter)
 
-		// expect(await rewardToken.balanceLPOf(signers[9].address)).to.be.eq(0)
+		// expect(await rewardToken.balanceOf(signers[9].address)).to.be.eq(0)
 	})
 
 	it('after all reward has been claimed contract should be empty', async function () {
 		const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards)
@@ -160,10 +160,10 @@ export const getReward = function () {
 		await staking.connect(signers[2]).getReward()
 		await staking.connect(signers[3]).getReward()
 
-		const balance = await rewardToken.balanceLPOf(await staking.getAddress())
+		const balance = await rewardToken.balanceOf(await staking.getAddress())
 
 		expect(balance).to.be.approximately(0, 1e8)
 
-		// expect(await rewardToken.balanceLPOf(signers[9].address)).to.be.eq(0)
+		// expect(await rewardToken.balanceOf(signers[9].address)).to.be.eq(0)
 	})
 }

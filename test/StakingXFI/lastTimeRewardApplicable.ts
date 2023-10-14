@@ -11,7 +11,7 @@ export const lastTimeRewardApplicable = function () {
 
 		/* --- After rewards distribution initiation --- */
 
-		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewardsAmount)
 
 		let latestBlockTimestamp = await time.latest()

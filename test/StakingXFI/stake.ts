@@ -10,7 +10,7 @@ export const stake = function () {
 
 	it('calls updateReward() with msg.sender as a parameter', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewards)
 
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
@@ -121,7 +121,7 @@ export const stake = function () {
 	it('right after stake user doesn`t have rewards to withdraw', async function () {
 		const { staking, signers, rewardToken, stakingToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewards)
 
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()

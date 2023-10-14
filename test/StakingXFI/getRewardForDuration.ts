@@ -6,7 +6,7 @@ export const getRewardForDuration = function () {
 	it('returns tokenRewardRate multiplied on rewardDuration', async function () {
 		const { staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewards)
 
 		const tokenRewardRate = await staking.tokenRewardRate()

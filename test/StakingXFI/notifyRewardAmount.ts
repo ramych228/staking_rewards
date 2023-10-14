@@ -9,7 +9,7 @@ export const notifyTokenRewardAmount = function () {
 	it('onlyOwner', async function () {
 		const { staking, signers, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const notifyOfRandomUser = staking.connect(signers[1]).notifyTokenRewardAmount(rewards)
 
 		await expect(notifyOfRandomUser).to.be.revertedWith('Ownable: caller is not the owner')
@@ -24,7 +24,7 @@ export const notifyTokenRewardAmount = function () {
 	it('calls updateReward() with address(0) as a parameter', async function () {
 		const { staking, signers, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const notify = () => staking.notifyTokenRewardAmount(rewards)
 
 		await expectUpdateRewardToBeCalled(notify, signers[0], staking, signers.slice(1, 4))
@@ -34,7 +34,7 @@ export const notifyTokenRewardAmount = function () {
 		it('doesn`t add leftovers if rewards distribution finished', async function () {
 			const { staking, signers, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-			const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+			const rewards = await rewardToken.balanceOf(await staking.getAddress())
 			await staking.notifyTokenRewardAmount(rewards)
 
 			const tokenRewardsDuration = await staking.tokenRewardsDuration()
@@ -44,7 +44,7 @@ export const notifyTokenRewardAmount = function () {
 				await staking.connect(staker).getReward()
 			}
 
-			const leftovers = await rewardToken.balanceLPOf(await staking.getAddress())
+			const leftovers = await rewardToken.balanceOf(await staking.getAddress())
 			expect(leftovers).to.be.lessThanOrEqual(1e8)
 
 			const amount = BigInt(1e18)
@@ -58,7 +58,7 @@ export const notifyTokenRewardAmount = function () {
 		it('adds leftovers and correctly calculates rate if rewards distribution have NOT finished', async function () {
 			const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
 
-			const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+			const rewards = await rewardToken.balanceOf(await staking.getAddress())
 
 			const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
@@ -88,7 +88,7 @@ export const notifyTokenRewardAmount = function () {
 	it('reverts on initializing more rewards, than there is on contract', async function () {
 		const { staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		let notify = staking.notifyTokenRewardAmount(rewards * 2n)
 
 		await expect(notify).to.be.revertedWith('Provided reward too high')
@@ -102,7 +102,7 @@ export const notifyTokenRewardAmount = function () {
 	it('updates lastUpdateTime to current timestamp', async function () {
 		const { staking, signers, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewards)
 
 		const latestTimestamp = await time.latest()
@@ -112,7 +112,7 @@ export const notifyTokenRewardAmount = function () {
 	it('updates tokenPeriodFinish to current timestamp + tokenRewardsDuration', async function () {
 		const { staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewards)
 
 		const latestTimestamp = await time.latest()
@@ -123,7 +123,7 @@ export const notifyTokenRewardAmount = function () {
 	it('emits RewardAdded(uint256 reward) event', async function () {
 		const { staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const notify = staking.notifyTokenRewardAmount(rewards)
 
 		await expect(notify).to.emit(staking, 'RewardAdded').withArgs(rewards)
@@ -134,7 +134,7 @@ export const notifyTokenRewardAmount = function () {
 	it('can initialize less rewards then there is on contract', async function () {
 		const { staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewards / 2n)
 
 		const tokenRewardRate = await staking.tokenRewardRate()
@@ -145,7 +145,7 @@ export const notifyTokenRewardAmount = function () {
 	it('rewards can be initialized in process of rewards distribution', async function () {
 		const { staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards / 2n)
@@ -167,7 +167,7 @@ export const notifyTokenRewardAmount = function () {
 	it('rewards can be reinitialized after distribution ends', async function () {
 		const { staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards / 2n)
