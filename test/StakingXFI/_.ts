@@ -1,12 +1,12 @@
 import { fixtures } from './_.fixtures'
 import { bonusPointsEarned } from './bonusPointsEarned'
 import { bonusPointsEarnedTotally } from './bonusPointsEarnedTotally'
-import { earned } from './earned'
+import { tokenEarned } from './tokenEarned'
 import { exit } from './exit'
 import { getReward } from './getReward'
 import { getRewardForDuration } from './getRewardForDuration'
 import { lastTimeRewardApplicable } from './lastTimeRewardApplicable'
-import { notifyRewardAmount } from './notifyRewardAmount'
+import { notifyTokenRewardAmount } from './notifyTokenRewardAmount'
 import { rewardPerToken } from './rewardPerToken'
 import { scenarios } from './scenarios/_'
 import { stake } from './stake'
@@ -23,7 +23,7 @@ describe.only('StakingXFI', function () {
 	/* --- View functions --- */
 
 	describe.skip('rewardPerToken', rewardPerToken)
-	describe('earned', earned)
+	describe('tokenEarned', tokenEarned)
 	describe('bonusPointsEarned', bonusPointsEarned)
 	describe.skip('bonusPointsEarnedTotally', bonusPointsEarnedTotally)
 
@@ -36,7 +36,7 @@ describe.only('StakingXFI', function () {
 	describe('withdraw', withdraw)
 	describe('getReward', getReward)
 	describe('exit', exit)
-	describe('notifyRewardAmount', notifyRewardAmount)
+	describe('notifyTokenRewardAmount', notifyTokenRewardAmount)
 
 	/* --- Modifier --- */
 

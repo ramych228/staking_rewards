@@ -8,17 +8,17 @@ async function deployStaking() {
 	const ERC20 = (await ethers.getContractFactory('ERC20Mintable')) as ERC20Mintable__factory
 	const rewardToken = await ERC20.deploy('Reward Token', 'RWRD')
 	const stakingToken = await ERC20.deploy('Staking Token', 'STKNG')
+	
+	const signers = await ethers.getSigners()
+	const owner = signers[0]
 
 	const StakingRewards = await ethers.getContractFactory('Staking')
 	const staking = await StakingRewards.deploy(
-		'Staked ' + (await stakingToken.name()),
-		'S' + (await stakingToken.symbol()),
+		owner.address,
 		await rewardToken.getAddress(),
 		await stakingToken.getAddress()
 	)
 
-	const signers = await ethers.getSigners()
-	const owner = signers[0]
 
 	return {
 		rewardToken,
@@ -92,12 +92,12 @@ export const fixtures = function () {
 		expect(await staking.balanceLPOf(signers[2].address)).to.be.eq(ethers.parseEther('2'))
 		expect(await staking.balanceLPOf(signers[3].address)).to.be.eq(ethers.parseEther('3'))
 
-		expect(await stakingToken.balanceLPOf(await staking.getAddress())).to.be.eq(ethers.parseEther('6'))
-		expect(await rewardToken.balanceLPOf(await staking.getAddress())).to.be.eq(ethers.parseEther('100'))
+		expect(await stakingToken.balanceOf(await staking.getAddress())).to.be.eq(ethers.parseEther('6'))
+		expect(await rewardToken.balanceOf(await staking.getAddress())).to.be.eq(ethers.parseEther('100'))
 
-		expect(await stakingToken.balanceLPOf(signers[1].address)).to.be.eq(ethers.parseEther('99'))
-		expect(await stakingToken.balanceLPOf(signers[2].address)).to.be.eq(ethers.parseEther('98'))
-		expect(await stakingToken.balanceLPOf(signers[3].address)).to.be.eq(ethers.parseEther('97'))
+		expect(await stakingToken.balanceOf(signers[1].address)).to.be.eq(ethers.parseEther('99'))
+		expect(await stakingToken.balanceOf(signers[2].address)).to.be.eq(ethers.parseEther('98'))
+		expect(await stakingToken.balanceOf(signers[3].address)).to.be.eq(ethers.parseEther('97'))
 
 		const stakedTotalSupply = await staking.totalSupplyLP()
 		expect(stakedTotalSupply).to.be.eq(ethers.parseEther('6'))
