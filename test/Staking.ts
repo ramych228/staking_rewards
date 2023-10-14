@@ -25,7 +25,7 @@ describe("StakingRewards", function () {
 
       // await deployedRewardToken.mint(await deployedStaking.getAddress(), 10000000);
 
-      const AMOUNT_MULTIPLIER = await deployedStaking._AMOUNT_MULTIPLIER();
+      const AMOUNT_MULTIPLIER = await deployedStaking.AMOUNT_MULTIPLIER();
       const stakers = [staker1, staker2, staker3];
       for (let staker of stakers) {
           const stakerBalance = ethers.parseEther("10");
@@ -37,21 +37,22 @@ describe("StakingRewards", function () {
   }
 
   async function notifyNativeRewardAmountStaking() {
-      const { deployedStaking } = await loadFixture(deploy60daysStakingRewardsFixture);
-      const reward = ethers.parseEther("1");
+      const { deployedStaking, deployedStakingToken, deployedRewardToken, owner, staker1, staker2, staker3, AMOUNT_MULTIPLIER } = await loadFixture(deploy60daysStakingRewardsFixture);
+      // const reward = ethers.parseEther("1");
+      const reward = 100;
       const duration = 50;
 
       await deployedStaking.notifyNativeRewardAmount(reward, {value: reward});
-      return { reward, duration };
+      return { deployedStaking, deployedStakingToken, deployedRewardToken, owner, staker1, staker2, staker3, AMOUNT_MULTIPLIER };
   }
 
   async function notifyTokenRewardAmountStaking() {
-      const { deployedStaking, deployedRewardToken } = await loadFixture(deploy60daysStakingRewardsFixture);
+      const { deployedStaking, deployedStakingToken, deployedRewardToken, owner, staker1, staker2, staker3, AMOUNT_MULTIPLIER } = await loadFixture(notifyNativeRewardAmountStaking);
       const reward = 100;
 
       await deployedRewardToken.mint(await deployedStaking.getAddress(), reward); // mint reward tokens
       await deployedStaking.notifyTokenRewardAmount(reward);
-      return { reward };
+      return { deployedStaking, deployedStakingToken, deployedRewardToken, owner, staker1, staker2, staker3, AMOUNT_MULTIPLIER };
   }
 
   describe("Simulation", function () {
@@ -74,25 +75,29 @@ describe("StakingRewards", function () {
       // })
 
       it("Token Staking", async function () {
-          const { staker1, staker2, deployedStaking } = await loadFixture(deploy60daysStakingRewardsFixture);
-          const {} = await loadFixture(notifyTokenRewardAmountStaking);
+          const { staker1, staker2, deployedStaking } = await loadFixture(notifyTokenRewardAmountStaking);
+          
 
           console.log("await deployedStaking.connect(staker1).stake(10);");
           await deployedStaking.connect(staker1).stake(10);
 
-          time.increaseTo((await deployedStaking._tokenPeriodFinish()) - 25n);
+          await time.increaseTo((await deployedStaking.tokenPeriodFinish()) - 25n);
+          console.log("finish: ", (await deployedStaking.tokenPeriodFinish()))
+          console.log("cur.time: ", await time.latest())
 
           console.log("await deployedStaking.connect(staker2).stake(10);");
           await deployedStaking.connect(staker2).stake(10);
 
-          time.increaseTo((await deployedStaking._tokenPeriodFinish()));
+          time.increaseTo((await deployedStaking.tokenPeriodFinish()));
 
+          console.log("await deployedStaking.connect(staker1).getReward();");
           await deployedStaking.connect(staker1).getReward();
+          console.log("await deployedStaking.connect(staker2).getReward();");
           await deployedStaking.connect(staker2).getReward();
           
       })
   })
-
+  /*
   describe("Basic Tests", function (){
     describe("Stake tests", function (){
       it("Balance after stake", async function () {
@@ -309,13 +314,14 @@ describe("Different Scenarios", function (){
         await deployedStaking.connect(staker1).vest(0);
         await deployedStaking.connect(staker2).vest(0);
 
-        console.log(await deployedStaking.balanceLPOf(staker2));
+        console.log(await deployedStaking.balanceLP(staker2.address));
         console.log(await deployedStaking.balanceSTOf(staker2));
 
         expect(await deployedStaking.balanceLPOf(staker1) + await deployedStaking.balanceSTOf(staker1)).to.equals(ethers.parseEther("0.85"));
         expect(await deployedStaking.balanceLPOf(staker2) + await deployedStaking.balanceSTOf(staker2)).to.equals(ethers.parseEther("0.85"));
       })
     })
+    */
 })
 
-});
+

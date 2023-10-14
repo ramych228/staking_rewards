@@ -17,23 +17,26 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 
     /* ========== ACCURACY CONSTS ========== */
 
-    uint256 public AMOUNT_MULTIPLIER = 1e4;
+    uint256 constant public AMOUNT_MULTIPLIER = 1e4;
+    uint256 constant public INIT_MULTIPLIER_VALUE = 1e10;
+    uint8 constant public VESTING_CONST = 1e1;
 
     /* ========== STATE VARIABLES ========== */
 
     IERC20 public stakingToken;
     IERC20 public rewardsToken;
+    uint256 public ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
 
     uint256 public tokenPeriodFinish;
     uint256 public tokenRewardRate = 0;
-    uint256 public tokenRewardsDuration = 50;
+    uint256 public tokenRewardsDuration = 50; // TODO 60 days
     uint256 public tokenMultiplierStored = 0;
     uint256 public lastUpdateTime;
 
     uint256 public nativePeriodFinish = 0;
     uint256 public nativeRewardRate = 0;
     uint256 public nativeRewardsDuration = 50;
-    uint256 public nativeMultiplierStored = 1e18;
+    uint256 public nativeMultiplierStored = INIT_MULTIPLIER_VALUE;
 
     uint256 public lastPoolUpdateTime = 1e18;
     uint256 public lastBPUpdateTime = 1e18;
@@ -46,12 +49,12 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
     uint256 private totalSupplyBP;
     uint256 private totalSupplyST;
 
-    mapping(address => uint256) private balanceLP;
+    mapping(address => uint256) public balanceLP;
     mapping(address => uint256) private balanceST;
     mapping(address => uint256) private rewards;
     mapping(address => uint256) private balanceBP;
 
-    uint256 m = 1e18;
+    uint256 m = INIT_MULTIPLIER_VALUE;
 
     mapping(address => uint256) private mPaid;
 
@@ -67,53 +70,6 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
         rewardsDistribution = _rewardsDistribution;
     }
 
-    /* ========CUSTOM VIEWS======= */
-
-    function _AMOUNT_MULTIPLIER() external view returns (uint256) {
-        return AMOUNT_MULTIPLIER;
-    }
-
-    function _tokenPeriodFinish() external view returns (uint256) {
-        return tokenPeriodFinish;
-    }
-
-    function _nativePeriodFinish() external view returns (uint256) {
-        return nativePeriodFinish;
-    }
-
-    function _lastUpdateTime() external view returns (uint256) {
-        return lastUpdateTime;
-    }
-
-    function _tokenRewardRate() external view returns (uint256) {
-        return tokenRewardRate;
-    }
-    
-    function _nativeRewardRate() external view returns (uint256) {
-        return nativeRewardRate;
-    }
-
-    function _nativeMultiplierStored() external view returns (uint256) {
-        return nativeMultiplierStored;
-    }
-
-    function _time() external view returns (uint256) {
-        return block.timestamp;
-    }
-
-    /* ========== VIEWS ========== */
-
-    function _totalSupplyLP() external view returns (uint256) {
-        return totalSupplyLP;
-    }
-
-    function _totalSupplyST() external view returns (uint256) {
-        return totalSupplyST;
-    }
-
-    function _totalSupplyBP() external view returns (uint256) {
-        return totalSupplyBP;
-    }
 
     function balanceLPOf(address account) external view returns (uint256) {
         return balanceLP[account] / AMOUNT_MULTIPLIER;
@@ -122,6 +78,8 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
     function balanceSTOf(address account) external view returns (uint256) {
         return balanceST[account] / AMOUNT_MULTIPLIER;
     }
+
+    // =====================USEFUL VIEWS==============================
 
     function lastTimeTokenRewardApplicable() public view returns (uint256) {
         return tokenPeriodFinish == 0 ? block.timestamp : Math.min(block.timestamp, tokenPeriodFinish);
@@ -144,40 +102,37 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
             return m;
         }
 
-        // console.log("getm1: ", (nativeRewardRate + totalSupplyLP) * (lastTimeTokenRewardApplicable() - lastUpdateTime) * m);
+        // console.log("<-----------getM---------------->");
+        // console.log("lastTimeTokenRewardApplicable() - lastUpdateTime", lastTimeTokenRewardApplicable() - lastUpdateTime);
+        
+        // console.log("getm1: ", (nativeRewardRate) * (lastTimeTokenRewardApplicable() - lastUpdateTime) * m);
         // console.log("getm2: ", (totalSupplyBP + totalSupplyLP + totalSupplyST));
+        // console.log("<---------end--getM---------------->");
+
 
         return
             m +
-            ((nativeRewardRate + totalSupplyLP) *
-                (lastTimeTokenRewardApplicable() - lastUpdateTime) *
-                m) /
+            (nativeRewardRate) *
+            (lastTimeNativeRewardApplicable() - Math.min(lastTimeNativeRewardApplicable(), lastUpdateTime)) *
+            m /
             (totalSupplyBP + totalSupplyLP + totalSupplyST);
     }
 
     function getNativeMultiplier() public view returns (uint256) {
-        if (totalSupplyLP + totalSupplyST == 0) {
+        if (totalSupplyLP + totalSupplyST + totalSupplyBP == 0) {
             return nativeMultiplierStored;
         }
 
-        console.log("nativem: ", nativeMultiplierStored);
-
-        console.log("nativem1: ", nativeMultiplierStored *
-                (
-                    1 + (((lastTimeNativeRewardApplicable() - lastUpdateTime) * nativeRewardRate)
-                )));
+        // console.log("<-----------getNM---------------->");
+        // console.log("lTNRA: ", lastTimeNativeRewardApplicable());
+        // console.log("lUT: ", lastUpdateTime);
+        // console.log("lastTimeNativeRewardApplicable() - lastUpdateTime", lastTimeNativeRewardApplicable() - Math.min(lastTimeNativeRewardApplicable(), lastUpdateTime));
         
-        console.log("nativem2: ", (totalSupplyLP + totalSupplyST));
-        console.log("TIMEEE: ", (lastTimeNativeRewardApplicable() - lastUpdateTime));
-        console.log("nRR:", nativeRewardRate);
+        // console.log("nativeMultiplierStored: ", nativeMultiplierStored);
+        // console.log("getm2: ", (totalSupplyBP + totalSupplyLP + totalSupplyST));
+        // console.log("<---------end--getNM---------------->");
 
-        console.log("wtf: ", (nativeMultiplierStored *
-            (1 + (lastTimeNativeRewardApplicable() - lastUpdateTime) *
-                        nativeRewardRate
-                 /
-                (totalSupplyLP + totalSupplyST))));
-
-        return (nativeMultiplierStored + nativeMultiplierStored * (lastTimeNativeRewardApplicable() - lastUpdateTime) * nativeRewardRate / (totalSupplyLP + totalSupplyST));
+        return nativeMultiplierStored + nativeMultiplierStored * (lastTimeNativeRewardApplicable() - Math.min(lastTimeNativeRewardApplicable(), lastUpdateTime)) * nativeRewardRate / (totalSupplyLP + totalSupplyBP + totalSupplyST);
     }
 
     function getTokenMultiplier() public view returns (uint256) {
@@ -185,9 +140,17 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
             return tokenMultiplierStored;
         }
 
-        return (tokenMultiplierStored +
-            ((lastTimeTokenRewardApplicable() - lastUpdateTime) * m) /
-            (totalSupplyBP + totalSupplyLP + totalSupplyST));
+        // console.log("<-----------getTM---------------->");
+        // console.log("lTTRA: ", lastTimeTokenRewardApplicable());
+        // console.log("lUT: ", lastUpdateTime);
+        // // console.log("lastTimeTokenRewardApplicable() - lastUpdateTime", lastTimeTokenRewardApplicable() - lastUpdateTime);
+        // console.log("tMS: ", tokenMultiplierStored);
+        // console.log("get TS: ", (totalSupplyBP + totalSupplyLP + totalSupplyST));
+        // console.log("<---------end--getTM---------------->");
+
+        return tokenMultiplierStored +
+            (lastTimeTokenRewardApplicable() - Math.min(lastTimeTokenRewardApplicable(), lastUpdateTime)) * m /
+            (totalSupplyBP + totalSupplyLP + totalSupplyST);
     }
 
     function tokenEarned(address account) public view returns (uint256) {
@@ -197,16 +160,16 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
         // console.log("st[acc]: ", balanceST[account]);
         // console.log("<------end-earned------->");
         return
-            ((balanceLP[account] + balanceST[account] + balanceBP[account]) *
+            (balanceLP[account] + balanceST[account] + balanceBP[account]) *
                 tokenRewardRate *
-                getTokenMultiplier()) / Math.max(mPaid[account], 1e18);
+                (getTokenMultiplier() - userTokenMultiplierPaid[account]) / Math.max(mPaid[account], INIT_MULTIPLIER_VALUE);
     }
 
     function nativeEarned(address account) public view returns (uint256) {
         return
-            ((balanceLP[account] + balanceST[account]) *
+            ((balanceLP[account] + balanceST[account] + balanceBP[account]) *
                 getNativeMultiplier()) /
-            Math.max(userNativeMultiplierPaid[account], 1e18);
+            Math.max(userNativeMultiplierPaid[account], INIT_MULTIPLIER_VALUE);
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -216,8 +179,6 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
     )
         external
         nonReentrant
-        //updateNativeReward(msg.sender)
-        //updateTokenReward(msg.sender)
         updateReward(msg.sender)
     {
         require(amount > 0, "Cannot stake 0");
@@ -239,8 +200,6 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
     )
         public
         nonReentrant
-        // updateNativeReward(msg.sender)
-        // updateTokenReward(msg.sender)
         updateReward(msg.sender)
     {
         require(amount > 0, "Cannot withdraw 0");
@@ -255,8 +214,6 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
     function getReward()
         public
         nonReentrant
-        // updateNativeReward(msg.sender)
-        // updateTokenReward(msg.sender)
         updateReward(msg.sender)
     {
         uint256 reward = rewards[msg.sender];
@@ -264,20 +221,20 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
             rewards[msg.sender] = 0;
             rewardsToken.safeTransfer(
                 msg.sender,
-                reward / AMOUNT_MULTIPLIER / 1e18
+                reward / AMOUNT_MULTIPLIER / INIT_MULTIPLIER_VALUE
             );
-            emit RewardPaid(msg.sender, reward / AMOUNT_MULTIPLIER / 1e18);
+            emit RewardPaid(msg.sender, reward / AMOUNT_MULTIPLIER / INIT_MULTIPLIER_VALUE);
         }
     }
 
     function vest(uint amount) public nonReentrant updateReward(msg.sender) {
-        // require(amount > 0, "Cannot vest 0");
+        require(amount > 0, "Cannot vest 0");
 
         uint256 balance = balanceST[msg.sender];
 
         require(amount <= balance, "Cannot vest more then balance");
         require(
-            amount * 10 < balanceLP[msg.sender],
+            amount * VESTING_CONST < balanceLP[msg.sender],
             "You should have more staked LP tokens"
         );
 
@@ -288,8 +245,13 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
         emit Vesting(msg.sender, amount);
     }
 
+    function compound() external updateReward(msg.sender) { 
+        // hui
+    }
+
     function exit() external {
         withdraw(balanceLP[msg.sender] / AMOUNT_MULTIPLIER);
+        getReward();
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */
@@ -305,10 +267,6 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
             tokenRewardRate = (reward + leftover) / tokenRewardsDuration;
         }
 
-        // Ensure the provided reward amount is not more than the balance in the contract.
-        // This keeps the reward rate in the right range, preventing overflows due to
-        // very high values of rewardRate in the earned and rewardsPerToken functions;
-        // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
         uint balance = rewardsToken.balanceOf(address(this));
         require(
             tokenRewardRate <= balance / tokenRewardsDuration,
@@ -316,7 +274,6 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
         );
 
         tokenRewardRate *= AMOUNT_MULTIPLIER;
-        // lastUpdateTime = block.timestamp;
         lastUpdateTime = block.timestamp;
 
         tokenPeriodFinish = block.timestamp + tokenRewardsDuration;
@@ -362,15 +319,13 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
         tokenMultiplierStored = getTokenMultiplier();
         nativeMultiplierStored = getNativeMultiplier();
 
-        console.log("nativeMultiplierStored: ", nativeMultiplierStored);
-
         m = getM();
 
         lastUpdateTime = lastTimeRewardApplicable();
 
         if (account != address(0)) {
             rewards[account] = tokenEarned(account);
-            balanceST[account] = nativeEarned(account) - balanceLP[account];
+            balanceST[account] = nativeEarned(account) - balanceLP[account] - balanceBP[account];
 
             userTokenMultiplierPaid[account] = tokenMultiplierStored;
             userNativeMultiplierPaid[account] = nativeMultiplierStored;
@@ -378,14 +333,14 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
             if (nativePeriodFinish != 0) {
                 totalSupplyST +=
                     (lastTimeNativeRewardApplicable() -
-                        Math.min(lastPoolUpdateTime, lastUpdateTime)) *
+                        Math.min(lastPoolUpdateTime, Math.min(lastTimeNativeRewardApplicable(), lastUpdateTime))) *
                     nativeRewardRate;
             }
 
             totalSupplyBP +=
                 (lastTimeRewardApplicable() -
-                    Math.min(lastPoolUpdateTime, lastUpdateTime)) *
-                totalSupplyLP;
+                    Math.min(userBPTimePaid[account], lastUpdateTime)) *
+                balanceLP[account];
 
             balanceBP[account] +=
                 (lastTimeRewardApplicable() -
@@ -398,18 +353,18 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
             mPaid[account] = m;
         }
 
-        console.log("<---------------updRewDEBUG---------->");
-        console.log("rewards[addr]", rewards[account], account);
-        console.log("lp[addr]", balanceLP[account]);
-        console.log("bp[addr]", balanceBP[account]);
-        console.log("st[addr]", balanceST[account]);
+        // console.log("<---------------updRewDEBUG---------->");
+        // console.log("rewards[addr]", rewards[account], account);
+        // console.log("lp[addr]", balanceLP[account]);
+        // console.log("bp[addr]", balanceBP[account]);
+        // console.log("st[addr]", balanceST[account]);
 
-        console.log("lp total", totalSupplyLP);
-        console.log("bp total", totalSupplyBP);
-        console.log("st total", totalSupplyST);
+        // console.log("lp total", totalSupplyLP);
+        // console.log("bp total", totalSupplyBP);
+        // console.log("st total", totalSupplyST);
 
-        console.log("m", m);
-        console.log("<------------END---updRewDEBUG---------->");
+        // console.log("m", m);
+        // console.log("<------------END---updRewDEBUG---------->");
 
         _;
     }
