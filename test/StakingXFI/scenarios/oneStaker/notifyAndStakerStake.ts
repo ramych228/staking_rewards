@@ -15,6 +15,6 @@ export const notifyAndStakerStake = function () {
 
         await time.increaseTo(await staking.tokenPeriodFinish() + 1n);
         
-        
+        console.log(await staking.balanceSTOf(staker));
     })
 }
