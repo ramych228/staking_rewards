@@ -61,9 +61,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
     uint256 public totalSupplyBP;
     uint256 public totalSupplyST;
 
-
     uint256 balanceMultiplier = INIT_MULTIPLIER_VALUE;
-
 
     /* ========== CONSTRUCTOR ========== */
 
