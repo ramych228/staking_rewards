@@ -15,17 +15,17 @@ export const bonusPointsEarned = function () {
 		/* === Initialize rewards === */
 
 		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
-		const rewardsDuration = await staking.rewardsDuration()
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
-		await staking.notifyRewardAmount(rewards)
+		await staking.notifyTokenRewardAmount(rewards)
 
-		await time.increase(rewardsDuration)
+		await time.increase(tokenRewardsDuration)
 
 		// 1 token
 		const stake = await staking.balanceLPOf(signers[1].address)
 
 		// 1 BP
-		let calculatedEarnedBonusPoints = (stake * rewardsDuration) / yearInSeconds
+		let calculatedEarnedBonusPoints = (stake * tokenRewardsDuration) / yearInSeconds
 
 		let earnedBonusPoints = await staking.bonusPointsEarned(signers[1].address)
 		expect(earnedBonusPoints).to.be.eq(calculatedEarnedBonusPoints)
@@ -37,29 +37,29 @@ export const bonusPointsEarned = function () {
 		/* === Initialize rewards === */
 
 		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
-		const rewardsDuration = await staking.rewardsDuration()
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
-		await staking.notifyRewardAmount(rewards)
+		await staking.notifyTokenRewardAmount(rewards)
 
 		/* === Skip rewards distribution time === */
 
-		await time.increase(rewardsDuration)
+		await time.increase(tokenRewardsDuration)
 
 		// 1 token
 		const stake = await staking.balanceLPOf(signers[1].address)
 
 		// 1 BP
-		let calculatedEarnedBonusPoints = (stake * rewardsDuration) / yearInSeconds
+		let calculatedEarnedBonusPoints = (stake * tokenRewardsDuration) / yearInSeconds
 
 		let earnedBonusPoints = await staking.bonusPointsEarned(signers[1].address)
 		expect(earnedBonusPoints).to.be.eq(calculatedEarnedBonusPoints)
 
 		/* === Skip more time then rewards === */
 
-		await time.increase(rewardsDuration)
+		await time.increase(tokenRewardsDuration)
 
 		// 1 BP
-		calculatedEarnedBonusPoints = (stake * rewardsDuration) / yearInSeconds
+		calculatedEarnedBonusPoints = (stake * tokenRewardsDuration) / yearInSeconds
 
 		earnedBonusPoints = await staking.bonusPointsEarned(signers[1].address)
 		expect(earnedBonusPoints).to.be.eq(calculatedEarnedBonusPoints)
@@ -71,19 +71,19 @@ export const bonusPointsEarned = function () {
 		/* === Initialize rewards === */
 
 		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
-		const rewardsDuration = await staking.rewardsDuration()
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
-		await staking.notifyRewardAmount(rewards)
+		await staking.notifyTokenRewardAmount(rewards)
 
 		/* === Skip rewards distribution time === */
 
-		await time.increase(rewardsDuration)
+		await time.increase(tokenRewardsDuration)
 
 		const bonusPoints1 = await staking.bonusPointsEarned(signers[1].address)
 		const bonusPoints2 = await staking.bonusPointsEarned(signers[2].address)
 		const bonusPoints3 = await staking.bonusPointsEarned(signers[3].address)
 
-		// const totalSupply = await staking.totalSupply()
+		// const totalSupplyLP = await staking.totalSupplyLP()
 		const totalBonusPoints = await staking.bonusPointsEarnedTotally()
 
 		const sumOfBonusPoints = bonusPoints1 + bonusPoints2 + bonusPoints3
@@ -97,19 +97,19 @@ export const bonusPointsEarned = function () {
 		/* === Initialize rewards === */
 
 		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
-		const rewardsDuration = await staking.rewardsDuration()
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
-		await staking.notifyRewardAmount(rewards)
+		await staking.notifyTokenRewardAmount(rewards)
 
 		/* === Skip rewards distribution time === */
 
-		await time.increase(rewardsDuration / 2n)
+		await time.increase(tokenRewardsDuration / 2n)
 
 		const stake1Initial = await staking.balanceLPOf(signers[1].address)
 		const stake2Initial = await staking.balanceLPOf(signers[2].address)
 		const stake3Initial = await staking.balanceLPOf(signers[3].address)
 
-		const totalSupplyBefore = await staking.totalSupply()
+		const totalSupplyBefore = await staking.totalSupplyLP()
 
 		const amount = BigInt(1e18)
 		await staking.connect(signers[1]).stake(amount * 2n)
@@ -120,11 +120,11 @@ export const bonusPointsEarned = function () {
 		const stake2End = await staking.balanceLPOf(signers[2].address)
 		const stake3End = await staking.balanceLPOf(signers[3].address)
 
-		const totalSupplyAfter = await staking.totalSupply()
+		const totalSupplyAfter = await staking.totalSupplyLP()
 
 		/* === Skip rewards distribution time === */
 
-		await time.increase(rewardsDuration / 2n)
+		await time.increase(tokenRewardsDuration / 2n)
 
 		const bonusPoints1 = await staking.bonusPointsEarned(signers[1].address)
 		const bonusPoints2 = await staking.bonusPointsEarned(signers[2].address)
@@ -140,9 +140,9 @@ export const bonusPointsEarned = function () {
 
 		/* === Checking calculations to be as planned === */
 
-		const bonusPoints1Calculated = ((stake1Initial + stake1End) * rewardsDuration) / 2n / yearInSeconds
-		const bonusPoints2Calculated = ((stake2Initial + stake2End) * rewardsDuration) / 2n / yearInSeconds
-		const bonusPoints3Calculated = ((stake3Initial + stake3End) * rewardsDuration) / 2n / yearInSeconds
+		const bonusPoints1Calculated = ((stake1Initial + stake1End) * tokenRewardsDuration) / 2n / yearInSeconds
+		const bonusPoints2Calculated = ((stake2Initial + stake2End) * tokenRewardsDuration) / 2n / yearInSeconds
+		const bonusPoints3Calculated = ((stake3Initial + stake3End) * tokenRewardsDuration) / 2n / yearInSeconds
 
 		expect(bonusPoints1).to.be.approximately(bonusPoints1Calculated, 1e11)
 		expect(bonusPoints2).to.be.approximately(bonusPoints2Calculated, 1e12)
@@ -151,7 +151,7 @@ export const bonusPointsEarned = function () {
 		/* === Check total bonus points calculation === */
 
 		const totalBonusPointsCalculated =
-			((totalSupplyBefore + totalSupplyAfter) * rewardsDuration) / 2n / yearInSeconds
+			((totalSupplyBefore + totalSupplyAfter) * tokenRewardsDuration) / 2n / yearInSeconds
 		expect(totalBonusPoints).to.be.approximately(totalBonusPointsCalculated, 1e12)
 	})
 

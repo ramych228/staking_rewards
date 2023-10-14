@@ -10,11 +10,11 @@ export const stake = function () {
 
 	it('calls updateReward() with msg.sender as a parameter', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewards = await rewardToken.balanceOf(await staking.getAddress())
-		await staking.notifyRewardAmount(rewards)
+		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		await staking.notifyTokenRewardAmount(rewards)
 
-		const rewardsDuration = await staking.rewardsDuration()
-		await time.increase(rewardsDuration / 3n)
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
+		await time.increase(tokenRewardsDuration / 3n)
 
 		const stake = () => staking.connect(signers[1]).stake(BigInt(1e18))
 		await expectUpdateRewardToBeCalled(stake, signers[1], staking, signers.slice(2, 4))
@@ -27,17 +27,17 @@ export const stake = function () {
 		await expect(stakeWith0Amount).to.be.revertedWith('Cannot stake 0')
 	})
 
-	it('increases totalSupply on amount that was staked', async function () {
+	it('increases totalSupplyLP on amount that was staked', async function () {
 		const { staking, signers } = await getStakingContractsWithStakersAndRewards()
 
 		const amounts = [1e18, 10e18, 1e9]
 
 		for (const [i, amount] of amounts.entries()) {
-			const totalSupplyBefore = await staking.totalSupply()
+			const totalSupplyBefore = await staking.totalSupplyLP()
 
 			await staking.connect(signers[i + 1]).stake(BigInt(amount))
 
-			const totalSupplyAfter = await staking.totalSupply()
+			const totalSupplyAfter = await staking.totalSupplyLP()
 
 			expect(totalSupplyAfter).to.be.eq(totalSupplyBefore + BigInt(amount))
 		}
@@ -49,11 +49,11 @@ export const stake = function () {
 		const amounts = [1e18, 10e18, 1e9]
 
 		for (const [i, amount] of amounts.entries()) {
-			const userBalanceBefore = await staking.balanceOf(signers[i + 1].address)
+			const userBalanceBefore = await staking.balanceLPOf(signers[i + 1].address)
 
 			await staking.connect(signers[i + 1]).stake(BigInt(amount))
 
-			const userBalanceAfter = await staking.balanceOf(signers[i + 1].address)
+			const userBalanceAfter = await staking.balanceLPOf(signers[i + 1].address)
 
 			expect(userBalanceAfter).to.be.eq(userBalanceBefore + BigInt(amount))
 		}
@@ -71,14 +71,14 @@ export const stake = function () {
 			const balancesBefore = []
 
 			for (const staker of otherStakers) {
-				const stakerBalance = await staking.balanceOf(staker.address)
+				const stakerBalance = await staking.balanceLPOf(staker.address)
 				balancesBefore.push(stakerBalance)
 			}
 
 			await staking.connect(signers[i + 1]).stake(BigInt(amount))
 
 			for (const [i, staker] of otherStakers.entries()) {
-				const stakerBalanceAfter = await staking.balanceOf(staker.address)
+				const stakerBalanceAfter = await staking.balanceLPOf(staker.address)
 				expect(stakerBalanceAfter).to.be.eq(balancesBefore[i])
 			}
 		}
@@ -121,11 +121,11 @@ export const stake = function () {
 	it('right after stake user doesn`t have rewards to withdraw', async function () {
 		const { staking, signers, rewardToken, stakingToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceOf(await staking.getAddress())
-		await staking.notifyRewardAmount(rewards)
+		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		await staking.notifyTokenRewardAmount(rewards)
 
-		const rewardsDuration = await staking.rewardsDuration()
-		await time.increase(rewardsDuration / 3n)
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
+		await time.increase(tokenRewardsDuration / 3n)
 
 		const amount = BigInt(1e18)
 
@@ -133,7 +133,7 @@ export const stake = function () {
 		await stakingToken.connect(signers[4]).approve(await staking.getAddress(), amount)
 		await staking.connect(signers[4]).stake(amount)
 
-		const earned = await staking.earned(signers[4])
-		expect(earned).to.be.eq(0)
+		const tokenEarned = await staking.tokenEarned(signers[4])
+		expect(tokenEarned).to.be.eq(0)
 	})
 }

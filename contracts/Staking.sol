@@ -45,18 +45,18 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
     mapping(address => uint256) public userNativeMultiplierPaid;
     mapping(address => uint256) public userBPTimePaid;
 
-    uint256 private totalSupplyLP;
-    uint256 private totalSupplyBP;
-    uint256 private totalSupplyST;
+    uint256 public totalSupplyLP;
+    uint256 public totalSupplyBP;
+    uint256 public totalSupplyST;
 
     mapping(address => uint256) public balanceLP;
-    mapping(address => uint256) private balanceST;
-    mapping(address => uint256) private rewards;
-    mapping(address => uint256) private balanceBP;
+    mapping(address => uint256) public balanceST;
+    mapping(address => uint256) public rewards;
+    mapping(address => uint256) public balanceBP;
 
     uint256 m = INIT_MULTIPLIER_VALUE;
 
-    mapping(address => uint256) private mPaid;
+    mapping(address => uint256) public mPaid;
 
     /* ========== CONSTRUCTOR ========== */
 

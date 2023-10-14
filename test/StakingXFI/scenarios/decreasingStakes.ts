@@ -7,9 +7,9 @@ export const decreasingStakes = async function () {
 	const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
 	const rewards = await rewardToken.balanceOf(await staking.getAddress())
-	const rewardsDuration = await staking.rewardsDuration()
+	const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
-	await staking.notifyRewardAmount(rewards)
+	await staking.notifyTokenRewardAmount(rewards)
 
 	/* --- 1/3 of rewards duration --- */
 
@@ -19,7 +19,7 @@ export const decreasingStakes = async function () {
 		let stakeAmount3Staker = 3
 		*/
 
-	await time.increase(rewardsDuration / 3n)
+	await time.increase(tokenRewardsDuration / 3n)
 
 	/* --- 2/3 of rewards duration --- */
 
@@ -33,7 +33,7 @@ export const decreasingStakes = async function () {
 	await staking.connect(signers[2]).withdraw(ethers.parseEther('1'))
 	await staking.connect(signers[3]).stake(ethers.parseEther('2'))
 
-	await time.increase(rewardsDuration / 3n)
+	await time.increase(tokenRewardsDuration / 3n)
 
 	/* --- 3/3 of rewards duration --- */
 
@@ -47,12 +47,12 @@ export const decreasingStakes = async function () {
 	await staking.connect(signers[2]).stake(ethers.parseEther('3'))
 	await staking.connect(signers[3]).withdraw(ethers.parseEther('2'))
 
-	await time.increase(rewardsDuration / 3n)
+	await time.increase(tokenRewardsDuration / 3n)
 
 	/* --- Rewards finished - assert state --- */
 
-	const periodFinish = await staking.periodFinish()
-	expect(await time.latest()).to.be.greaterThanOrEqual(periodFinish)
+	const tokenPeriodFinish = await staking.tokenPeriodFinish()
+	expect(await time.latest()).to.be.greaterThanOrEqual(tokenPeriodFinish)
 
 	const fairRewardFor1Staker =
 		(BigInt(100e18) * 1n) / 6n / 3n + (BigInt(100e18) * 2n) / 8n / 3n + (BigInt(100e18) * 3n) / 10n / 3n
@@ -67,9 +67,9 @@ export const decreasingStakes = async function () {
 	// console.log('Fair Reward For 2 Staker', fairRewardFor2Staker)
 	// console.log('Fair Reward For 3 Staker', fairRewardFor3Staker)
 
-	const reward1 = await staking.connect(signers[1]).earned(signers[1].address)
-	const reward2 = await staking.connect(signers[2]).earned(signers[2].address)
-	const reward3 = await staking.connect(signers[3]).earned(signers[3].address)
+	const reward1 = await staking.connect(signers[1]).tokenEarned(signers[1].address)
+	const reward2 = await staking.connect(signers[2]).tokenEarned(signers[2].address)
+	const reward3 = await staking.connect(signers[3]).tokenEarned(signers[3].address)
 
 	100000003339015747843
 	console.log(reward1 + reward2 + reward3)

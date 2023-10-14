@@ -14,12 +14,12 @@ export const getReward = function () {
 
 		/* --- Setup rewards --- */
 
-		const rewards = await rewardToken.balanceOf(await staking.getAddress())
-		const rewardsDuration = await staking.rewardsDuration()
+		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
-		await staking.notifyRewardAmount(rewards)
+		await staking.notifyTokenRewardAmount(rewards)
 
-		await time.increase(rewardsDuration)
+		await time.increase(tokenRewardsDuration)
 
 		/* --- Function call --- */
 
@@ -33,29 +33,29 @@ export const getReward = function () {
 	it('returns no rewards if there is none for user', async function () {
 		const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceOf(await staking.getAddress())
-		const rewardsDuration = await staking.rewardsDuration()
+		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
-		await staking.notifyRewardAmount(rewards)
+		await staking.notifyTokenRewardAmount(rewards)
 
-		await time.increase(rewardsDuration)
+		await time.increase(tokenRewardsDuration)
 
 		const tx = staking.connect(signers[9]).getReward()
 		await expect(tx).not.to.emit(staking, 'RewardPaid')
 
-		expect(await staking.earned(signers[9].address)).to.be.eq(0)
-		expect(await rewardToken.balanceOf(signers[9].address)).to.be.eq(0)
+		expect(await staking.tokenEarned(signers[9].address)).to.be.eq(0)
+		expect(await rewardToken.balanceLPOf(signers[9].address)).to.be.eq(0)
 	})
 
 	it('makes rewards = 0', async function () {
 		const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceOf(await staking.getAddress())
-		const rewardsDuration = await staking.rewardsDuration()
+		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
-		await staking.notifyRewardAmount(rewards)
+		await staking.notifyTokenRewardAmount(rewards)
 
-		await time.increase(rewardsDuration)
+		await time.increase(tokenRewardsDuration)
 
 		// Called to update 'rewards' mapping
 		await staking.connect(signers[1]).getReward()
@@ -67,32 +67,32 @@ export const getReward = function () {
 	it('makes transfer', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceOf(await staking.getAddress())
-		const rewardsDuration = await staking.rewardsDuration()
+		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
-		await staking.notifyRewardAmount(rewards)
-		await time.increase(rewardsDuration)
+		await staking.notifyTokenRewardAmount(rewards)
+		await time.increase(tokenRewardsDuration)
 
-		const earned = await staking.earned(signers[1].address)
+		const tokenEarned = await staking.tokenEarned(signers[1].address)
 
 		const tx = staking.connect(signers[1]).getReward()
 
-		await expect(tx).to.changeTokenBalances(rewardToken, [signers[1], staking], [earned, -earned])
+		await expect(tx).to.changeTokenBalances(rewardToken, [signers[1], staking], [tokenEarned, -tokenEarned])
 	})
 
 	it('emits event RewardPaid', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceOf(await staking.getAddress())
-		const rewardsDuration = await staking.rewardsDuration()
+		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
-		await staking.notifyRewardAmount(rewards)
-		await time.increase(rewardsDuration)
+		await staking.notifyTokenRewardAmount(rewards)
+		await time.increase(tokenRewardsDuration)
 
-		const earned = await staking.earned(signers[1].address)
+		const tokenEarned = await staking.tokenEarned(signers[1].address)
 
 		const tx = staking.connect(signers[1]).getReward()
-		await expect(tx).to.emit(staking, 'RewardPaid').withArgs(signers[1].address, earned)
+		await expect(tx).to.emit(staking, 'RewardPaid').withArgs(signers[1].address, tokenEarned)
 	})
 
 	/* --- Scenarios --- */
@@ -100,70 +100,70 @@ export const getReward = function () {
 	it('double withdraw of rewards will not get user more than he should get', async function () {
 		const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceOf(await staking.getAddress())
-		const rewardsDuration = await staking.rewardsDuration()
+		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
-		await staking.notifyRewardAmount(rewards)
+		await staking.notifyTokenRewardAmount(rewards)
 
-		await time.increase(rewardsDuration)
+		await time.increase(tokenRewardsDuration)
 
 		// Called to update 'rewards' mapping
 		await staking.connect(signers[1]).getReward()
-		const balanceBefore = await rewardToken.balanceOf(signers[1].address)
+		const balanceBefore = await rewardToken.balanceLPOf(signers[1].address)
 		// await staking.connect(signers[1]).getReward()
 
-		// Rewards must be already updated, so earned() must return 0
+		// Rewards must be already updated, so tokenEarned() must return 0
 		await staking.connect(signers[1]).getReward()
-		const balanceAfter = await rewardToken.balanceOf(signers[1].address)
+		const balanceAfter = await rewardToken.balanceLPOf(signers[1].address)
 
 		expect(balanceBefore).to.be.eq(balanceAfter)
 
-		// expect(await rewardToken.balanceOf(signers[9].address)).to.be.eq(0)
+		// expect(await rewardToken.balanceLPOf(signers[9].address)).to.be.eq(0)
 	})
 
 	it('being called right after stake returns no or almost no rewards (depends on time passed)', async function () {
 		const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceOf(await staking.getAddress())
-		const rewardsDuration = await staking.rewardsDuration()
+		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
-		await staking.notifyRewardAmount(rewards)
+		await staking.notifyTokenRewardAmount(rewards)
 
-		await time.increase(rewardsDuration)
+		await time.increase(tokenRewardsDuration)
 
 		// Called to update 'rewards' mapping
 		await staking.connect(signers[1]).getReward()
-		const balanceBefore = await rewardToken.balanceOf(signers[1].address)
+		const balanceBefore = await rewardToken.balanceLPOf(signers[1].address)
 		// await staking.connect(signers[1]).getReward()
 
-		// Rewards must be already updated, so earned() must return 0
+		// Rewards must be already updated, so tokenEarned() must return 0
 		await staking.connect(signers[1]).getReward()
-		const balanceAfter = await rewardToken.balanceOf(signers[1].address)
+		const balanceAfter = await rewardToken.balanceLPOf(signers[1].address)
 
 		expect(balanceBefore).to.be.eq(balanceAfter)
 
-		// expect(await rewardToken.balanceOf(signers[9].address)).to.be.eq(0)
+		// expect(await rewardToken.balanceLPOf(signers[9].address)).to.be.eq(0)
 	})
 
 	it('after all reward has been claimed contract should be empty', async function () {
 		const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceOf(await staking.getAddress())
-		const rewardsDuration = await staking.rewardsDuration()
+		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
-		await staking.notifyRewardAmount(rewards)
+		await staking.notifyTokenRewardAmount(rewards)
 
-		await time.increase(rewardsDuration)
+		await time.increase(tokenRewardsDuration)
 
 		// Called to collect all reward tokens
 		await staking.connect(signers[1]).getReward()
 		await staking.connect(signers[2]).getReward()
 		await staking.connect(signers[3]).getReward()
 
-		const balance = await rewardToken.balanceOf(await staking.getAddress())
+		const balance = await rewardToken.balanceLPOf(await staking.getAddress())
 
 		expect(balance).to.be.approximately(0, 1e8)
 
-		// expect(await rewardToken.balanceOf(signers[9].address)).to.be.eq(0)
+		// expect(await rewardToken.balanceLPOf(signers[9].address)).to.be.eq(0)
 	})
 }

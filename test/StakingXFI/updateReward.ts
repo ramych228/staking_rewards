@@ -55,12 +55,12 @@ export const updateReward = function () {
 
 		/* --- Setup rewards --- */
 
-		const rewards = await rewardToken.balanceOf(await staking.getAddress())
-		const rewardsDuration = await staking.rewardsDuration()
+		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
-		await staking.notifyRewardAmount(rewards)
+		await staking.notifyTokenRewardAmount(rewards)
 
-		await time.increase(rewardsDuration)
+		await time.increase(tokenRewardsDuration)
 
 		/* --- Function call --- */
 

@@ -14,8 +14,8 @@ export const bonusPointsEarnedTotally = function () {
 
 		/* ========== Initialize rewards ========== */
 
-		const rewards = await rewardToken.balanceOf(await staking.getAddress())
-		await staking.notifyRewardAmount(rewards)
+		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		await staking.notifyTokenRewardAmount(rewards)
 
 		/* ========== Check initial Total Bonus Points ========== */
 
@@ -32,9 +32,9 @@ export const bonusPointsEarnedTotally = function () {
 
 		totalBonusPoints = await staking.bonusPointsEarnedTotally()
 
-		const totalSupply = await staking.totalSupply()
+		const totalSupplyLP = await staking.totalSupplyLP()
 
-		expect(totalBonusPoints).to.be.approximately(totalSupply / 2n, 1e13)
+		expect(totalBonusPoints).to.be.approximately(totalSupplyLP / 2n, 1e13)
 	})
 
 	it('no bonus points generated before notify', async function () {
@@ -54,7 +54,7 @@ export const bonusPointsEarnedTotally = function () {
 		await staking.connect(signers[1]).stake(BigInt(1e18))
 
 		// After first stake totalBonusPoints are not changed
-		// because of multiplication on totalSupply = 0
+		// because of multiplication on totalSupplyLP = 0
 		expect(await staking.totalBonusPoints()).to.be.eq(0n)
 
 		// console.log('Last update time', await staking.lastUpdateTime())
@@ -70,8 +70,8 @@ export const bonusPointsEarnedTotally = function () {
 
 		/* ========== Initialize rewards ========== */
 
-		const rewards = await rewardToken.balanceOf(await staking.getAddress())
-		await staking.notifyRewardAmount(rewards)
+		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		await staking.notifyTokenRewardAmount(rewards)
 
 		/* ========== Check initial Total Bonus Points ========== */
 
@@ -88,27 +88,27 @@ export const bonusPointsEarnedTotally = function () {
 
 		totalBonusPoints = await staking.bonusPointsEarnedTotally()
 
-		const totalSupply = await staking.totalSupply()
+		const totalSupplyLP = await staking.totalSupplyLP()
 
-		expect(totalBonusPoints).to.be.approximately(totalSupply / 2n, 1e13)
+		expect(totalBonusPoints).to.be.approximately(totalSupplyLP / 2n, 1e13)
 
 		/* ========== Total Bonus Points after more time have passed ========== */
 
 		await time.increase(yearInSeconds / 2n)
 
 		let totalBonusPointsStored = await staking.totalBonusPoints()
-		expect(totalBonusPointsStored).to.be.approximately(totalSupply / 2n, 1e13)
+		expect(totalBonusPointsStored).to.be.approximately(totalSupplyLP / 2n, 1e13)
 
 		// Updates rewards and bonus points
 		await staking.connect(signers[1]).getReward()
 
 		totalBonusPointsStored = await staking.totalBonusPoints()
-		expect(totalBonusPointsStored).to.be.approximately(totalSupply, 1e13)
+		expect(totalBonusPointsStored).to.be.approximately(totalSupplyLP, 1e13)
 
 		totalBonusPoints = await staking.bonusPointsEarnedTotally()
 
 		// Total bonus points remain the same
-		expect(totalBonusPoints).to.be.approximately(totalSupply, 1)
+		expect(totalBonusPoints).to.be.approximately(totalSupplyLP, 1)
 	})
 
 	it.skip('bonus points are updated on updateReward()')

@@ -4,7 +4,7 @@ import { expect } from 'chai'
 import { ethers } from 'hardhat'
 
 export const rewardPerToken = function () {
-	it('equals 0 on totalSupply = 0', async function () {
+	it('equals 0 on totalSupplyLP = 0', async function () {
 		const { staking } = await getStakingContracts()
 		const rewardPerToken = await staking.rewardPerToken()
 		expect(rewardPerToken).to.be.eq(0)
@@ -19,31 +19,31 @@ export const rewardPerToken = function () {
 
 	it('after stakes and right after notify equals 0', async function () {
 		const { staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
-		await staking.notifyRewardAmount(rewardsAmount)
+		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		await staking.notifyTokenRewardAmount(rewardsAmount)
 
 		const rewardPerToken = await staking.rewardPerToken()
 		console.log('rewardPerTokenStored', await staking.rewardPerTokenStored())
 		console.log('lastTimeRewardApplicable', await staking.lastTimeRewardApplicable())
 		console.log('lastUpdateTime', await staking.lastUpdateTime())
-		console.log('rewardRate', await staking.rewardRate())
-		console.log('totalSupply', await staking.totalSupply())
+		console.log('tokenRewardRate', await staking.tokenRewardRate())
+		console.log('totalSupplyLP', await staking.totalSupplyLP())
 
 		expect(rewardPerToken).to.be.eq(0)
 	})
 
 	it.skip(
-		'What happens after periodFinish and updateReward()? Seems like rewardPerToken should become smaller because of negative sub()'
+		'What happens after tokenPeriodFinish and updateReward()? Seems like rewardPerToken should become smaller because of negative sub()'
 	)
 
 	it.skip('after stakes and some time after notify', async function () {
 		const { staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
-		await staking.notifyRewardAmount(rewardsAmount)
+		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		await staking.notifyTokenRewardAmount(rewardsAmount)
 
-		const rewardRate = await staking.rewardRate()
-		const totalSupply = await staking.totalSupply()
+		const tokenRewardRate = await staking.tokenRewardRate()
+		const totalSupplyLP = await staking.totalSupplyLP()
 
 		const times = [1, 1000, 100000]
 		let timePassed = 0
@@ -53,14 +53,14 @@ export const rewardPerToken = function () {
 			timePassed += timeAmount
 			const rewardPerToken = await staking.rewardPerToken()
 
-			expect(rewardPerToken).to.be.eq((BigInt(timePassed) * rewardRate * BigInt(1e18)) / totalSupply)
+			expect(rewardPerToken).to.be.eq((BigInt(timePassed) * tokenRewardRate * BigInt(1e18)) / totalSupplyLP)
 		}
 	})
 
 	it('if there is no time last after lastUpdate then rewardPerToken should stay the same', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
-		await staking.notifyRewardAmount(rewardsAmount)
+		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		await staking.notifyTokenRewardAmount(rewardsAmount)
 
 		await time.increase(1000)
 
@@ -74,8 +74,8 @@ export const rewardPerToken = function () {
 
 	it.skip('after notify and 1000s and withdraw', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
-		await staking.notifyRewardAmount(rewardsAmount)
+		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		await staking.notifyTokenRewardAmount(rewardsAmount)
 
 		await time.increase(1000)
 		await staking.connect(signers[3]).withdraw(ethers.parseEther('2'))
@@ -87,8 +87,8 @@ export const rewardPerToken = function () {
 
 	it.skip('after notify and 1000s and new stake and 1000s', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
-		await staking.notifyRewardAmount(rewardsAmount)
+		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		await staking.notifyTokenRewardAmount(rewardsAmount)
 
 		await time.increase(1000)
 		await staking.connect(signers[1]).stake(ethers.parseEther('5'))
@@ -101,8 +101,8 @@ export const rewardPerToken = function () {
 
 	it.skip('after notify and 1000s and withdraw and 1000s', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
-		await staking.notifyRewardAmount(rewardsAmount)
+		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		await staking.notifyTokenRewardAmount(rewardsAmount)
 
 		await time.increase(1000)
 		await staking.connect(signers[3]).withdraw(ethers.parseEther('2'))
@@ -115,8 +115,8 @@ export const rewardPerToken = function () {
 
 	it.skip('after notify and 1000s and withdraw and 1000s', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
-		await staking.notifyRewardAmount(rewardsAmount)
+		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		await staking.notifyTokenRewardAmount(rewardsAmount)
 
 		await time.increase(1000)
 		await staking.connect(signers[3]).withdraw(ethers.parseEther('2'))
@@ -129,15 +129,15 @@ export const rewardPerToken = function () {
 
 	it('can be calculated on every time', async function () {
 		const { staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
-		await staking.notifyRewardAmount(rewardsAmount)
+		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		await staking.notifyTokenRewardAmount(rewardsAmount)
 
-		const rewardsDuration = await staking.rewardsDuration()
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		/* --- 1/3 --- */
-		await time.increase(rewardsDuration / 3n)
+		await time.increase(tokenRewardsDuration / 3n)
 
-		const totalSupply = await staking.totalSupply()
+		const totalSupplyLP = await staking.totalSupplyLP()
 
 		// Update
 		await staking.getReward()
@@ -150,7 +150,7 @@ export const rewardPerToken = function () {
 		console.log('RPTS', await staking.rewardPerTokenStored())
 
 		// Assert
-		let calculatedRewardPerToken = ((rewardsAmount / 3n) * BigInt(1e18)) / totalSupply
+		let calculatedRewardPerToken = ((rewardsAmount / 3n) * BigInt(1e18)) / totalSupplyLP
 		const precision = 1000000n
 		expect(rewardPerToken).to.be.within(
 			calculatedRewardPerToken - calculatedRewardPerToken / precision,
@@ -159,7 +159,7 @@ export const rewardPerToken = function () {
 
 		/* --- 2/3 --- */
 
-		await time.increase(rewardsDuration / 3n)
+		await time.increase(tokenRewardsDuration / 3n)
 
 		// Update
 		await staking.getReward()
@@ -172,7 +172,7 @@ export const rewardPerToken = function () {
 		console.log('RPTS', await staking.rewardPerTokenStored())
 
 		// Assert
-		calculatedRewardPerToken = (((rewardsAmount * 2n) / 3n) * BigInt(1e18)) / totalSupply
+		calculatedRewardPerToken = (((rewardsAmount * 2n) / 3n) * BigInt(1e18)) / totalSupplyLP
 		expect(rewardPerToken).to.be.within(
 			calculatedRewardPerToken - calculatedRewardPerToken / precision,
 			calculatedRewardPerToken + calculatedRewardPerToken / precision
@@ -180,7 +180,7 @@ export const rewardPerToken = function () {
 
 		/* --- 3/3 --- */
 
-		await time.increase(rewardsDuration / 3n)
+		await time.increase(tokenRewardsDuration / 3n)
 
 		// Update
 		await staking.getReward()
@@ -193,7 +193,7 @@ export const rewardPerToken = function () {
 		console.log('RPTS', await staking.rewardPerTokenStored())
 
 		// Assert
-		calculatedRewardPerToken = (rewardsAmount * BigInt(1e18)) / totalSupply
+		calculatedRewardPerToken = (rewardsAmount * BigInt(1e18)) / totalSupplyLP
 		expect(rewardPerToken).to.be.within(
 			calculatedRewardPerToken - calculatedRewardPerToken / precision,
 			calculatedRewardPerToken + calculatedRewardPerToken / precision
@@ -202,15 +202,15 @@ export const rewardPerToken = function () {
 
 	it('can be calculated on every time with changing stakes', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
-		await staking.notifyRewardAmount(rewardsAmount)
+		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		await staking.notifyTokenRewardAmount(rewardsAmount)
 
-		const rewardsDuration = await staking.rewardsDuration()
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		/* --- 1/3 --- */
-		await time.increase(rewardsDuration / 3n)
+		await time.increase(tokenRewardsDuration / 3n)
 
-		let totalSupply = await staking.totalSupply()
+		let totalSupplyLP = await staking.totalSupplyLP()
 
 		// Update
 		await staking.connect(signers[1]).stake(BigInt(2e18))
@@ -219,16 +219,16 @@ export const rewardPerToken = function () {
 		let rewardPerToken = await staking.rewardPerToken()
 
 		// Assert
-		let calculatedRewardPerToken = ((rewardsAmount / 3n) * BigInt(1e18)) / totalSupply
+		let calculatedRewardPerToken = ((rewardsAmount / 3n) * BigInt(1e18)) / totalSupplyLP
 
 		expect(rewardPerToken).to.be.approximately(calculatedRewardPerToken, 1e13)
 
 		/* --- 2/3 --- */
 
-		await time.increase(rewardsDuration / 3n)
+		await time.increase(tokenRewardsDuration / 3n)
 
-		totalSupply = await staking.totalSupply()
-		console.log(totalSupply)
+		totalSupplyLP = await staking.totalSupplyLP()
+		console.log(totalSupplyLP)
 
 		// Update
 		await staking.connect(signers[2]).stake(BigInt(2e18))
@@ -237,14 +237,14 @@ export const rewardPerToken = function () {
 		rewardPerToken = await staking.rewardPerToken()
 
 		// Assert
-		calculatedRewardPerToken = calculatedRewardPerToken + ((rewardsAmount / 3n) * BigInt(1e18)) / totalSupply
+		calculatedRewardPerToken = calculatedRewardPerToken + ((rewardsAmount / 3n) * BigInt(1e18)) / totalSupplyLP
 		expect(rewardPerToken).to.be.approximately(calculatedRewardPerToken, 1e13)
 
 		/* --- 3/3 --- */
 
-		await time.increase(rewardsDuration / 3n)
+		await time.increase(tokenRewardsDuration / 3n)
 
-		totalSupply = await staking.totalSupply()
+		totalSupplyLP = await staking.totalSupplyLP()
 
 		// Update
 		await staking.getReward()
@@ -253,25 +253,25 @@ export const rewardPerToken = function () {
 		rewardPerToken = await staking.rewardPerToken()
 
 		// Assert
-		calculatedRewardPerToken = calculatedRewardPerToken + ((rewardsAmount / 3n) * BigInt(1e18)) / totalSupply
+		calculatedRewardPerToken = calculatedRewardPerToken + ((rewardsAmount / 3n) * BigInt(1e18)) / totalSupplyLP
 		expect(rewardPerToken).to.be.approximately(calculatedRewardPerToken, 1e13)
 	})
 
-	it('equals reward divided on totalSupply if stakes didn`t change', async function () {
+	it('equals reward divided on totalSupplyLP if stakes didn`t change', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewardsAmount = await rewardToken.balanceOf(await staking.getAddress())
-		await staking.notifyRewardAmount(rewardsAmount)
+		const rewardsAmount = await rewardToken.balanceLPOf(await staking.getAddress())
+		await staking.notifyTokenRewardAmount(rewardsAmount)
 
-		const totalSupply = await staking.totalSupply()
-		const rewardsDuration = await staking.rewardsDuration()
+		const totalSupplyLP = await staking.totalSupplyLP()
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
-		await time.increase(rewardsDuration)
+		await time.increase(tokenRewardsDuration)
 
 		// Values
 		let rewardPerToken = await staking.rewardPerToken()
 
 		// Assert
-		let expectedRewardPerToken = (BigInt(100e18) * BigInt(1e18)) / totalSupply
+		let expectedRewardPerToken = (BigInt(100e18) * BigInt(1e18)) / totalSupplyLP
 
 		expect(rewardPerToken).to.be.approximately(expectedRewardPerToken, 1e7)
 	})

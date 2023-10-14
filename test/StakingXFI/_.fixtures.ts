@@ -88,18 +88,18 @@ export const fixtures = function () {
 		const totalSupply = await stakingToken.totalSupply()
 		expect(totalSupply).to.be.eq(ethers.parseEther('300'))
 
-		expect(await staking.balanceOf(signers[1].address)).to.be.eq(ethers.parseEther('1'))
-		expect(await staking.balanceOf(signers[2].address)).to.be.eq(ethers.parseEther('2'))
-		expect(await staking.balanceOf(signers[3].address)).to.be.eq(ethers.parseEther('3'))
+		expect(await staking.balanceLPOf(signers[1].address)).to.be.eq(ethers.parseEther('1'))
+		expect(await staking.balanceLPOf(signers[2].address)).to.be.eq(ethers.parseEther('2'))
+		expect(await staking.balanceLPOf(signers[3].address)).to.be.eq(ethers.parseEther('3'))
 
-		expect(await stakingToken.balanceOf(await staking.getAddress())).to.be.eq(ethers.parseEther('6'))
-		expect(await rewardToken.balanceOf(await staking.getAddress())).to.be.eq(ethers.parseEther('100'))
+		expect(await stakingToken.balanceLPOf(await staking.getAddress())).to.be.eq(ethers.parseEther('6'))
+		expect(await rewardToken.balanceLPOf(await staking.getAddress())).to.be.eq(ethers.parseEther('100'))
 
-		expect(await stakingToken.balanceOf(signers[1].address)).to.be.eq(ethers.parseEther('99'))
-		expect(await stakingToken.balanceOf(signers[2].address)).to.be.eq(ethers.parseEther('98'))
-		expect(await stakingToken.balanceOf(signers[3].address)).to.be.eq(ethers.parseEther('97'))
+		expect(await stakingToken.balanceLPOf(signers[1].address)).to.be.eq(ethers.parseEther('99'))
+		expect(await stakingToken.balanceLPOf(signers[2].address)).to.be.eq(ethers.parseEther('98'))
+		expect(await stakingToken.balanceLPOf(signers[3].address)).to.be.eq(ethers.parseEther('97'))
 
-		const stakedTotalSupply = await staking.totalSupply()
+		const stakedTotalSupply = await staking.totalSupplyLP()
 		expect(stakedTotalSupply).to.be.eq(ethers.parseEther('6'))
 	})
 }

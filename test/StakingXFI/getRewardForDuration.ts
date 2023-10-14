@@ -3,18 +3,18 @@ import { expect } from 'chai'
 
 export const getRewardForDuration = function () {
 	/* --- Units --- */
-	it('returns rewardRate multiplied on rewardDuration', async function () {
+	it('returns tokenRewardRate multiplied on rewardDuration', async function () {
 		const { staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
-		const rewards = await rewardToken.balanceOf(await staking.getAddress())
-		await staking.notifyRewardAmount(rewards)
+		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		await staking.notifyTokenRewardAmount(rewards)
 
-		const rewardRate = await staking.rewardRate()
-		const rewardsDuration = await staking.rewardsDuration()
+		const tokenRewardRate = await staking.tokenRewardRate()
+		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		const rewardsForDuration = await staking.getRewardForDuration()
 
-		expect(rewardsForDuration).to.be.eq(rewardRate * rewardsDuration)
+		expect(rewardsForDuration).to.be.eq(tokenRewardRate * tokenRewardsDuration)
 	})
 
 	/* --- Scenarios --- */
@@ -22,9 +22,9 @@ export const getRewardForDuration = function () {
 	it('returns 0 before rewards were initialized', async function () {
 		const { staking } = await getStakingContracts()
 
-		const rewardRate = await staking.rewardRate()
+		const tokenRewardRate = await staking.tokenRewardRate()
 
-		expect(rewardRate).to.be.eq(0)
+		expect(tokenRewardRate).to.be.eq(0)
 
 		const rewardsForDuration = await staking.getRewardForDuration()
 
