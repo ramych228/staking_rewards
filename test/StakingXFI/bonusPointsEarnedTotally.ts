@@ -14,7 +14,7 @@ export const bonusPointsEarnedTotally = function () {
 
 		/* ========== Initialize rewards ========== */
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewards)
 
 		/* ========== Check initial Total Bonus Points ========== */
@@ -70,7 +70,7 @@ export const bonusPointsEarnedTotally = function () {
 
 		/* ========== Initialize rewards ========== */
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewards)
 
 		/* ========== Check initial Total Bonus Points ========== */
