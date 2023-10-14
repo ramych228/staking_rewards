@@ -59,12 +59,41 @@ async function deployStakingWithStakersAndRewards() {
 	}
 }
 
+async function deployStakingWithStakers() {
+	const { rewardToken, stakingToken, staking, signers, owner } = await loadFixture(deployStaking)
+
+	const amount = ethers.parseEther('100')
+
+	await rewardToken.mint(await staking.getAddress(), amount)
+	await rewardToken.mint(owner.address, amount)
+
+	await stakingToken.mint(signers[1].address, amount)
+	await stakingToken.mint(signers[2].address, amount)
+	await stakingToken.mint(signers[3].address, amount)
+
+	await stakingToken.connect(signers[1]).approve(await staking.getAddress(), amount)
+	await stakingToken.connect(signers[2]).approve(await staking.getAddress(), amount)
+	await stakingToken.connect(signers[3]).approve(await staking.getAddress(), amount)
+
+	return {
+		rewardToken,
+		stakingToken,
+		staking,
+		owner,
+		signers,
+	}
+}
+
 export async function getStakingContracts() {
 	return loadFixture(deployStaking)
 }
 
 export async function getStakingContractsWithStakersAndRewards() {
 	return loadFixture(deployStakingWithStakersAndRewards)
+}
+
+export async function getStakingContractWithStakers() {
+	return loadFixture(deployStakingWithStakers)
 }
 
 export const fixtures = function () {
