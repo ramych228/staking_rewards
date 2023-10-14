@@ -2,7 +2,8 @@
   "name": "hardhat-project",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^3.0.0",
-    "hardhat": "^2.18.1"
+    "hardhat": "^2.18.1",
+    "typechain": "^8.3.1"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.5.0"
