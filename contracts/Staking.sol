@@ -15,9 +15,9 @@ import "hardhat/console.sol";
 contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    /* ========== ACCURACY CONSTS ========== */
+    /* ========== CONSTANTS ========== */
 
-    uint256 constant public AMOUNT_MULTIPLIER = 1e4;
+    uint256 constant public AMOUNT_MULTIPLIER = 1e4; 
     uint256 constant public INIT_MULTIPLIER_VALUE = 1e10;
     uint8 constant public VESTING_CONST = 1e1;
 
@@ -27,36 +27,38 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
     IERC20 public rewardsToken;
     uint256 public ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
 
-    uint256 public tokenPeriodFinish;
-    uint256 public tokenRewardRate = 0;
-    uint256 public tokenRewardsDuration = 50; // TODO 60 days
-    uint256 public tokenMultiplierStored = 0;
-    uint256 public lastUpdateTime;
+    uint256 public tokenPeriodFinish; // finish of tokens earning
+    uint256 public tokenRewardRate = 0; // how many tokens are given to pool every second
+    uint256 public tokenRewardsDuration = 50; // TODO 60 days 
+    uint256 public tokenMultiplierStored = 0; 
+    uint256 public lastUpdateTime; // last update of everything stored (check updateReward modifier) 
 
     uint256 public nativePeriodFinish = 0;
     uint256 public nativeRewardRate = 0;
     uint256 public nativeRewardsDuration = 50;
     uint256 public nativeMultiplierStored = INIT_MULTIPLIER_VALUE;
 
-    uint256 public lastPoolUpdateTime = 1e18;
-    uint256 public lastBPUpdateTime = 1e18;
+    uint256 public lastPoolUpdateTime = type(uint256).max; 
+    uint256 public lastBPUpdateTime = type(uint256).max;
 
     mapping(address => uint256) public userTokenMultiplierPaid;
     mapping(address => uint256) public userNativeMultiplierPaid;
     mapping(address => uint256) public userBPTimePaid;
 
-    uint256 private totalSupplyLP;
-    uint256 private totalSupplyBP;
-    uint256 private totalSupplyST;
+    uint256 public totalSupplyLP;
+    uint256 public totalSupplyBP;
+    uint256 public totalSupplyST;
 
     mapping(address => uint256) public balanceLP;
-    mapping(address => uint256) private balanceST;
-    mapping(address => uint256) private rewards;
-    mapping(address => uint256) private balanceBP;
+    mapping(address => uint256) public balanceST;
+    mapping(address => uint256) public rewards;
+    mapping(address => uint256) public balanceBP;
+    mapping(address => uint256) public balanceNC;
+    mapping(address => uint256) public balanceVST;
 
-    uint256 m = INIT_MULTIPLIER_VALUE;
+    uint256 balanceMultiplier = INIT_MULTIPLIER_VALUE;
 
-    mapping(address => uint256) private mPaid;
+    mapping(address => uint256) public balanceMultiplierPaid;
 
     /* ========== CONSTRUCTOR ========== */
 
@@ -97,24 +99,24 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
             );
     }
 
-    function getM() public view returns (uint256) {
+    function getBalanceMultiplier() public view returns (uint256) {
         if (totalSupplyLP + totalSupplyST + totalSupplyBP == 0) {
-            return m;
+            return balanceMultiplier;
         }
 
-        // console.log("<-----------getM---------------->");
+        // console.log("<-----------getBalanceMultiplier---------------->");
         // console.log("lastTimeTokenRewardApplicable() - lastUpdateTime", lastTimeTokenRewardApplicable() - lastUpdateTime);
         
-        // console.log("getm1: ", (nativeRewardRate) * (lastTimeTokenRewardApplicable() - lastUpdateTime) * m);
+        // console.log("getm1: ", (nativeRewardRate) * (lastTimeTokenRewardApplicable() - lastUpdateTime) * balanceMultiplier);
         // console.log("getm2: ", (totalSupplyBP + totalSupplyLP + totalSupplyST));
-        // console.log("<---------end--getM---------------->");
+        // console.log("<---------end--getBalanceMultiplier---------------->");
 
 
         return
-            m +
+            balanceMultiplier +
             (nativeRewardRate) *
             (lastTimeNativeRewardApplicable() - Math.min(lastTimeNativeRewardApplicable(), lastUpdateTime)) *
-            m /
+            balanceMultiplier /
             (totalSupplyBP + totalSupplyLP + totalSupplyST);
     }
 
@@ -149,7 +151,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
         // console.log("<---------end--getTM---------------->");
 
         return tokenMultiplierStored +
-            (lastTimeTokenRewardApplicable() - Math.min(lastTimeTokenRewardApplicable(), lastUpdateTime)) * m /
+            (lastTimeTokenRewardApplicable() - Math.min(lastTimeTokenRewardApplicable(), lastUpdateTime)) * balanceMultiplier /
             (totalSupplyBP + totalSupplyLP + totalSupplyST);
     }
 
@@ -162,7 +164,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
         return
             (balanceLP[account] + balanceST[account] + balanceBP[account]) *
                 tokenRewardRate *
-                (getTokenMultiplier() - userTokenMultiplierPaid[account]) / Math.max(mPaid[account], INIT_MULTIPLIER_VALUE);
+                (getTokenMultiplier() - userTokenMultiplierPaid[account]) / Math.max(balanceMultiplierPaid[account], INIT_MULTIPLIER_VALUE);
     }
 
     function nativeEarned(address account) public view returns (uint256) {
@@ -319,7 +321,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
         tokenMultiplierStored = getTokenMultiplier();
         nativeMultiplierStored = getNativeMultiplier();
 
-        m = getM();
+        balanceMultiplier = getBalanceMultiplier();
 
         lastUpdateTime = lastTimeRewardApplicable();
 
@@ -350,7 +352,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
             lastPoolUpdateTime = lastUpdateTime;
             userBPTimePaid[account] = lastUpdateTime;
 
-            mPaid[account] = m;
+            balanceMultiplierPaid[account] = balanceMultiplier;
         }
 
         // console.log("<---------------updRewDEBUG---------->");
@@ -363,7 +365,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
         // console.log("bp total", totalSupplyBP);
         // console.log("st total", totalSupplyST);
 
-        // console.log("m", m);
+        // console.log("balanceMultiplier", balanceMultiplier);
         // console.log("<------------END---updRewDEBUG---------->");
 
         _;
