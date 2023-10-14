@@ -4,10 +4,7 @@ coverage
 coverage.json
 typechain
 typechain-types
-
-# test
 test/Staking.ts
-
 # Hardhat files
 cache
 artifacts
