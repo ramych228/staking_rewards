@@ -343,6 +343,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 	function updateUserVariables(address account, UserVariables memory userPreviousVariables) internal view returns (UserVariables memory) {
 		userPreviousVariables.rewards += tokenEarned(account);
 		userPreviousVariables.balanceST =
+
 			nativeEarned(account) -
 			userPreviousVariables.balanceLP -
 			userPreviousVariables.balanceBP;

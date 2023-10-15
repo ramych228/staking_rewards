@@ -16,44 +16,45 @@ import { withdraw } from './withdraw'
 describe.only('StakingXFI', function () {
 	/* --- Fixtures --- */
 
-	describe('fixtures', fixtures)
+	// describe('fixtures', fixtures)
 
-	/* --- Basic StakingRewards --- */
+	// /* --- Basic StakingRewards --- */
 
-	/* --- View functions --- */
+	// /* --- View functions --- */
 
-	describe.skip('rewardPerToken', rewardPerToken)
-	describe('tokenEarned', tokenEarned)
-	describe.skip('bonusPointsEarned', bonusPointsEarned)
-	describe.skip('bonusPointsEarnedTotally', bonusPointsEarnedTotally)
+	// describe.skip('rewardPerToken', rewardPerToken)
+	// describe('tokenEarned', tokenEarned)
+	// describe('bonusPointsEarned', bonusPointsEarned)
+	// describe.skip('bonusPointsEarnedTotally', bonusPointsEarnedTotally)
 
-	describe('getRewardForDuration', getRewardForDuration)
-	describe('lastTimeRewardApplicable', lastTimeRewardApplicable)
 
-	/* --- Mutable functions --- */
+	// describe('getRewardForDuration', getRewardForDuration)
+	// describe('lastTimeRewardApplicable', lastTimeRewardApplicable)
 
-	describe('stake', stake)
-	describe('withdraw', withdraw)
-	describe('getReward', getReward)
-	describe('exit', exit)
-	describe('notifyTokenRewardAmount', notifyTokenRewardAmount)
+	// /* --- Mutable functions --- */
 
-	/* --- Modifier --- */
+	// describe('stake', stake)
+	// describe('withdraw', withdraw)
+	// describe('getReward', getReward)
+	// describe('exit', exit)
+	// describe('notifyTokenRewardAmount', notifyTokenRewardAmount)
 
-	describe('updateReward', updateReward)
+	// /* --- Modifier --- */
 
-	/* --- Modified ERC20 Logic --- */
+	// describe('updateReward', updateReward)
 
-	describe('totalSupply', async function () {
-		// changes on stake/unstake
-	})
-	describe('transfer', async function () {
-		// non-trasferable
-	})
-	describe('transferFrom', async function () {})
-	describe('allowance', async function () {
-		// non-trasferable
-	})
+	// /* --- Modified ERC20 Logic --- */
+
+	// describe('totalSupply', async function () {
+	// 	// changes on stake/unstake
+	// })
+	// describe('transfer', async function () {
+	// 	// non-trasferable
+	// })
+	// describe('transferFrom', async function () {})
+	// describe('allowance', async function () {
+	// 	// non-trasferable
+	// })
 
 	/* --- Scenarios --- */
 
