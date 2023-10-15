@@ -265,7 +265,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 		} else {
 			uint256 remaining = tokenPeriodFinish - block.timestamp;
 			uint256 leftover = remaining * tokenRewardRate;
-			tokenRewardRate = (reward + leftover) * AMOUNT_MULTIPLIER / tokenRewardsDuration;
+			tokenRewardRate = (reward * AMOUNT_MULTIPLIER + leftover) / tokenRewardsDuration;
 		}
 
 		uint balance = rewardsToken.balanceOf(address(this));
@@ -285,7 +285,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 		} else {
 			uint256 remaining = nativePeriodFinish - block.timestamp;
 			uint256 leftover = remaining * nativeRewardRate;
-			nativeRewardRate = (amount + leftover) * AMOUNT_MULTIPLIER / nativeRewardsDuration;
+			nativeRewardRate = (amount * AMOUNT_MULTIPLIER + leftover) / nativeRewardsDuration;
 		}
 
 		uint balance = address(this).balance;
