@@ -161,11 +161,12 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 	}
 
 	function tokenEarned(address account) internal view returns (uint256) {
-		// console.log("\n", "<-------earned------->");
-		// console.log("balanceLP[acc]: ", userVariables[account].balanceLP);
-		// console.log("userBP[acc]: ", userVariables[account].balanceBP);
-		// console.log("st[acc]: ", userVariables[account].balanceST);
-		// console.log("<------end-earned------->");
+		console.log("\n", "<-------earned------->");
+		console.log("balanceLP[acc]: ", userVariables[account].balanceLP);
+		console.log("userBP[acc]: ", userVariables[account].balanceBP);
+		console.log("st[acc]: ", userVariables[account].balanceST);
+		console.log("(getTokenMultiplier() - userVariables[account].userTokenMultiplierPaid):", (getTokenMultiplier() - userVariables[account].userTokenMultiplierPaid));
+		console.log("<------end-earned------->");
 		return
 			((userVariables[account].balanceLP +
 				userVariables[account].balanceST +
@@ -260,17 +261,16 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 		uint256 reward
 	) external override onlyRewardsDistribution updateReward(address(0)) {
 		if (block.timestamp >= tokenPeriodFinish) {
-			tokenRewardRate = reward / tokenRewardsDuration;
+			tokenRewardRate = reward * AMOUNT_MULTIPLIER / tokenRewardsDuration;
 		} else {
 			uint256 remaining = tokenPeriodFinish - block.timestamp;
 			uint256 leftover = remaining * tokenRewardRate;
-			tokenRewardRate = (reward + leftover) / tokenRewardsDuration;
+			tokenRewardRate = (reward + leftover) * AMOUNT_MULTIPLIER / tokenRewardsDuration;
 		}
 
 		uint balance = rewardsToken.balanceOf(address(this));
 		require(tokenRewardRate <= balance * AMOUNT_MULTIPLIER / tokenRewardsDuration, 'Provided reward too high');
 
-		tokenRewardRate *= AMOUNT_MULTIPLIER;
 		lastUpdateTime = block.timestamp;
 
 		tokenPeriodFinish = block.timestamp + tokenRewardsDuration;
@@ -281,17 +281,16 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 		uint256 amount
 	) external payable override onlyRewardsDistribution updateReward(address(0)) {
 		if (block.timestamp >= nativePeriodFinish) {
-			nativeRewardRate = amount / nativeRewardsDuration;
+			nativeRewardRate = amount * AMOUNT_MULTIPLIER / nativeRewardsDuration;
 		} else {
 			uint256 remaining = nativePeriodFinish - block.timestamp;
 			uint256 leftover = remaining * nativeRewardRate;
-			nativeRewardRate = (amount + leftover) / nativeRewardsDuration;
+			nativeRewardRate = (amount + leftover) * AMOUNT_MULTIPLIER / nativeRewardsDuration;
 		}
 
 		uint balance = address(this).balance;
 		require(nativeRewardRate <= balance * AMOUNT_MULTIPLIER / nativeRewardsDuration, 'Provided reward too high');
 
-		nativeRewardRate *= AMOUNT_MULTIPLIER;
 		lastUpdateTime = block.timestamp;
 		nativePeriodFinish = block.timestamp + nativeRewardsDuration;
 		emit NativeRewardAdded(amount);
@@ -321,20 +320,20 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 			userPreviousVariables.balanceMultiplierPaid = balanceMultiplierStored;
 		}
 
-		// console.log("<---------------updRewDEBUG---------->");
-		// console.log("rewards[addr]", userVariables[account].rewards, account);
-		// console.log("lp[addr]", userVariables[account].balanceLP);
-		// console.log("bp[addr]", userVariables[account].balanceBP);
-		// console.log("st[addr]", userVariables[account].balanceST);
+		console.log("<---------------updRewDEBUG---------->");
+		console.log("rewards[addr]", userPreviousVariables.rewards, account);
+		console.log("lp[addr]", userPreviousVariables.balanceLP);
+		console.log("bp[addr]", userPreviousVariables.balanceBP);
+		console.log("st[addr]", userPreviousVariables.balanceST);
 
-		// console.log("lp total", totalSupplyLP);
-		// console.log("bp total", totalSupplyBP);
-		// console.log("st total", totalSupplyST);
+		console.log("lp total", totalSupplyLP);
+		console.log("bp total", totalSupplyBP);
+		console.log("st total", totalSupplyST);
 
-		// console.log("balanceMultiplierStored", balanceMultiplierStored);
-        // console.log("nativeMultiplierStored", nativeMultiplierStored);
-        // console.log("tokenMultiplierStored", tokenMultiplierStored);
-		// console.log("<------------END---updRewDEBUG---------->");
+		console.log("balanceMultiplierStored", balanceMultiplierStored);
+        console.log("nativeMultiplierStored", nativeMultiplierStored);
+        console.log("tokenMultiplierStored", tokenMultiplierStored);
+		console.log("<------------END---updRewDEBUG---------->");
 
 		userVariables[account] = userPreviousVariables;
 		_;
