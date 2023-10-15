@@ -5,7 +5,7 @@ import { expect } from 'chai'
 import { sign } from 'crypto'
 
 export const notifyAndStakerStake = function () {
-	it('Staker stake before notify reward', async function () {
+	it.only('Staker stake before notify reward', async function () {
         const { signers, staking, rewardToken } = await getStakingContractWithStakers()
         const staker = signers[0];
         const tokenRewardAmount = ethers.parseEther("1");
@@ -16,5 +16,7 @@ export const notifyAndStakerStake = function () {
         await time.increaseTo(await staking.tokenPeriodFinish() + 1n);
         
         console.log(await staking.balanceSTOf(staker));
+
+
     })
 }
