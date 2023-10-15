@@ -34,11 +34,13 @@ export const complexScenario = async function () {
 	let stakeAmount3Staker = 5
 	*/
 
-	await staking.connect(signers[1]).withdraw(BigInt(1e18))
+	await staking.connect(signers[1]).stake(BigInt(1e18))
+	await staking.connect(signers[1]).stake(BigInt(1e18))
+	await staking.connect(signers[1]).stake(BigInt(1e18))
 	// await staking.connect(signers[2]).withdraw(BigInt(1e18))
 	// await staking.connect(signers[3]).stake(BigInt(2e18))
 
-	await time.increase(tokenRewardsDuration / 3n)
+	await time.increase(tokenRewardsDuration / 3n + 1n)
 
 	/* --- 3/3 of rewards duration --- */
 
@@ -48,11 +50,11 @@ export const complexScenario = async function () {
 		let stakeAmount3Staker = 3
 		*/
 
-	// await staking.connect(signers[1]).stake(BigInt(1e18))
+	await staking.connect(signers[1]).stake(BigInt(1e18))
 	// await staking.connect(signers[2]).stake(BigInt(3e18))
 	// await staking.connect(signers[3]).withdraw(BigInt(2e18))
 
-	await time.increase(tokenRewardsDuration / 3n)
+	await time.increase(tokenRewardsDuration / 3n + 1n)
 
 	/* === Distribution finished === */
 
