@@ -98,7 +98,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 		return Math.min(block.timestamp, Math.max(lastTimeTokenRewardApplicable(), lastTimeNativeRewardApplicable()));
 	}
 
-	function getBalanceMultiplier() public view returns (uint256) {
+	function getBalanceMultiplier() internal view returns (uint256) {
 		if (totalSupplyLP + totalSupplyST + totalSupplyBP == 0) {
 			return balanceMultiplierStored;
 		}
@@ -174,7 +174,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 			Math.max(userVariables[account].balanceMultiplierPaid, INIT_MULTIPLIER_VALUE);
 	}
 
-	function nativeEarned(address account) public view returns (uint256) {
+	function nativeEarned(address account) internal view returns (uint256) {
 		return
 			((userVariables[account].balanceLP + userVariables[account].balanceST + userVariables[account].balanceBP) *
 				getNativeMultiplier()) /
@@ -339,7 +339,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 	}
 
 	function updateUserVariables(address account) internal {
-		userVariables[account].rewards = tokenEarned(account);
+		userVariables[account].rewards += tokenEarned(account);
 		userVariables[account].balanceST =
 			nativeEarned(account) -
 			userVariables[account].balanceLP -
