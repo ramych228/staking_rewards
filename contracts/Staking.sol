@@ -268,7 +268,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 		}
 
 		uint balance = rewardsToken.balanceOf(address(this));
-		require(tokenRewardRate <= balance / tokenRewardsDuration, 'Provided reward too high');
+		require(tokenRewardRate <= balance * AMOUNT_MULTIPLIER / tokenRewardsDuration, 'Provided reward too high');
 
 		tokenRewardRate *= AMOUNT_MULTIPLIER;
 		lastUpdateTime = block.timestamp;
@@ -289,7 +289,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 		}
 
 		uint balance = address(this).balance;
-		require(nativeRewardRate <= balance / nativeRewardsDuration, 'Provided reward too high');
+		require(nativeRewardRate <= balance * AMOUNT_MULTIPLIER / nativeRewardsDuration, 'Provided reward too high');
 
 		nativeRewardRate *= AMOUNT_MULTIPLIER;
 		lastUpdateTime = block.timestamp;
