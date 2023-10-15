@@ -10,45 +10,62 @@ export const notifyAndStakerStake = function () {
         const staker = signers[1];
         const tokenRewardAmount = ethers.parseEther("1");
 
+        // --------- ACTION -------------------  
+
         await staking.connect(staker).stake(tokenRewardAmount / 10n);
         await staking.notifyTokenRewardAmount(tokenRewardAmount);
 
         await time.increaseTo(await staking.tokenPeriodFinish() + 1n);
         
-        await staking.connect(staker).getReward();
-        console.log("the reward is ", await rewardToken.balanceOf(staker));
-        console.log("the balance of staked tokens is", await staking.balanceLPOf(staker));
-        // const getReward = staking.connect(staker).getReward();
-        // await expect(getReward).to.changeTokenBalances(stakingToken, [staker, staking], [tokenRewardAmount, -tokenRewardAmount]);    
-        // console.log(await rewardToken.balanceOf(staker));
+        await expect(staking.connect(staker).getReward()).to.changeTokenBalances(rewardToken, [staker, staking], [tokenRewardAmount, -tokenRewardAmount]);    
     })
 
-    it.skip('Stake before notify Native reward', async function () {
+    it('Stake before notify Native reward', async function () {
         const { signers, staking, rewardToken, stakingToken } = await getStakingContractWithStakers()
-
         const staker = signers[1];
         const tokenNativeAmount = ethers.parseEther("1");
 
+        // ------------- ACTION ---------------------
 
-        console.log(await ethers.provider.getBalance(signers[0]))
-        const transaction = await signers[0].sendTransaction({to: staking, value: tokenNativeAmount});
-        transaction.wait();
-        console.log("the first");
         await staking.connect(staker).stake(tokenNativeAmount / 10n);
+        await staking.notifyNativeRewardAmount(tokenNativeAmount, {value: tokenNativeAmount});
 
-        console.log("the second");
-        await staking.notifyNativeRewardAmount(tokenNativeAmount);
+        await time.increaseTo(await staking.nativePeriodFinish() + 1n);
+
+        await staking.connect(staker).exit();
+        expect(await staking.balanceSTOf(staker)).to.equals(tokenNativeAmount);
+    })
+
+    it('notify Token reward and stake right after it', async function () {
+        const { signers, staking, rewardToken, stakingToken, duration } = await getStakingContractWithStakers()
+        const staker = signers[1];
+        const tokenRewardAmount = ethers.parseEther("1");
+
+        // --------- ACTION -------------------  
+
+        await staking.notifyTokenRewardAmount(tokenRewardAmount);
+        await staking.connect(staker).stake(tokenRewardAmount / 10n);
 
         await time.increaseTo(await staking.tokenPeriodFinish() + 1n);
-
-        console.log("the ST token amount ", await staking.balanceSTOf(staker));
         
-        // await staking.connect(staker).getReward();
-        // console.log("the reward is ", await rewardToken.balanceOf(staker));
-        // console.log("the balance of staked tokens is", await staking.balanceLPOf(staker));
+        const tokenChange = tokenRewardAmount - (tokenRewardAmount / duration)
+        await expect(staking.connect(staker).getReward()).to.changeTokenBalances(rewardToken, [staker, staking], [tokenChange, -tokenChange]);    
+    })
 
-        // const getReward = staking.connect(staker).getReward();
-        // await expect(getReward).to.changeTokenBalances(stakingToken, [staker, staking], [tokenNativeAmount, -tokenNativeAmount]);    
-        // console.log(await rewardToken.balanceOf(staker));
+    it('notify Native reward and stake right after it', async function () {
+        const { signers, staking, rewardToken, stakingToken, duration } = await getStakingContractWithStakers()
+        const staker = signers[1];
+        const tokenNativeAmount = ethers.parseEther("1");
+
+        // ------------- ACTION ---------------------
+
+        await staking.notifyNativeRewardAmount(tokenNativeAmount, {value: tokenNativeAmount});
+        await staking.connect(staker).stake(tokenNativeAmount / 10n);
+
+        await time.increaseTo(await staking.nativePeriodFinish() + 1n);
+
+        await staking.connect(staker).exit();
+        const tokenChange = tokenNativeAmount - (tokenNativeAmount / duration)
+        expect(await staking.balanceSTOf(staker)).to.equals(tokenChange);
     })
 }
