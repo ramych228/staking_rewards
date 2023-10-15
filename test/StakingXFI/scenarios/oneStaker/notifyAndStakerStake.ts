@@ -4,6 +4,8 @@ import { getStakingContractWithStakers } from '../../_.fixtures'
 import { expect } from 'chai'
 import { sign } from 'crypto'
 
+// TODO: ADD time: before finish, after finish
+
 export const notifyAndStakerStake = function () {
 	it('Stake before notify Token reward', async function () {
         const { signers, staking, rewardToken, stakingToken } = await getStakingContractWithStakers()
@@ -48,7 +50,7 @@ export const notifyAndStakerStake = function () {
 
         await time.increaseTo(await staking.tokenPeriodFinish() + 1n);
         
-        const tokenChange = tokenRewardAmount - (tokenRewardAmount / duration)
+        const tokenChange = tokenRewardAmount - (tokenRewardAmount / duration);
         await expect(staking.connect(staker).getReward()).to.changeTokenBalances(rewardToken, [staker, staking], [tokenChange, -tokenChange]);    
     })
 
@@ -65,7 +67,42 @@ export const notifyAndStakerStake = function () {
         await time.increaseTo(await staking.nativePeriodFinish() + 1n);
 
         await staking.connect(staker).exit();
-        const tokenChange = tokenNativeAmount - (tokenNativeAmount / duration)
+        const tokenChange = tokenNativeAmount - (tokenNativeAmount / duration);
+        expect(await staking.balanceSTOf(staker)).to.equals(tokenChange);
+    })
+
+    it('notify Token reward and stake after X secs', async function () {
+        const { signers, staking, rewardToken, stakingToken, duration } = await getStakingContractWithStakers()
+        const staker = signers[1];
+        const tokenRewardAmount = ethers.parseEther("1");
+
+        // --------- ACTION -------------------  
+
+        await staking.notifyTokenRewardAmount(tokenRewardAmount);
+
+        await time.increaseTo(await staking.tokenPeriodFinish() - 26n);
+        await staking.connect(staker).stake(tokenRewardAmount / 10n);
+        await time.increaseTo(await staking.tokenPeriodFinish() + 1n);
+
+        const tokenChange = tokenRewardAmount / 2n;
+        await expect(staking.connect(staker).getReward()).to.changeTokenBalances(rewardToken, [staker, staking], [tokenChange, -tokenChange]);    
+    })
+
+    it('notify Native reward and stake after X secs', async function () {
+        const { signers, staking, rewardToken, stakingToken, duration } = await getStakingContractWithStakers()
+        const staker = signers[1];
+        const nativeRewardAmount = ethers.parseEther("1");
+
+        // --------- ACTION -------------------  
+
+        await staking.notifyNativeRewardAmount(nativeRewardAmount, {value: nativeRewardAmount});
+
+        await time.increaseTo(await staking.nativePeriodFinish() - 26n);
+        await staking.connect(staker).stake(nativeRewardAmount / 10n);
+        await time.increaseTo(await staking.nativePeriodFinish() + 1n);
+        await staking.connect(staker).exit();
+        
+        const tokenChange = nativeRewardAmount / 2n;
         expect(await staking.balanceSTOf(staker)).to.equals(tokenChange);
     })
 }
