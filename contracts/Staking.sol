@@ -76,6 +76,10 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 		rewardsDistribution = _rewardsDistribution;
 	}
 
+	function balanceBPOf(address account) external view returns (uint256) {
+		return userVariables[account].balanceBP / AMOUNT_MULTIPLIER;
+	}
+
 	function balanceLPOf(address account) external view returns (uint256) {
 		return userVariables[account].balanceLP / AMOUNT_MULTIPLIER;
 	}
@@ -370,10 +374,9 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 	}
 
 	function updateVesting(address account, UserVariables memory userPreviousVariables) internal view returns (UserVariables memory) {
-		if (Math.min(block.timestamp, userVariables[account].vestingFinishTime) > userVariables[account].userLastUpdateTime) {
+		if (Math.min(block.timestamp, userVariables[account].vestingFinishTime) < userVariables[account].userLastUpdateTime) {
 			return userPreviousVariables;
 		}
-			
 
 		uint256 increaseOfNC = ((Math.min(block.timestamp, userPreviousVariables.vestingFinishTime) -
 				userPreviousVariables.userLastUpdateTime) *
