@@ -16,13 +16,15 @@ export const complexScenario = async function () {
 	const rewards = await rewardToken.balanceOf(await staking.getAddress())
 	const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
+	console.log("notifyTokenRewardAmount");
 	await staking.notifyTokenRewardAmount(rewards)
+	console.log("end of notifyTokenRewardAmount");
 
 	console.log('Token Period Finish', await staking.tokenPeriodFinish())
 	console.log('Token Reward Rate', (await staking.tokenRewardRate()) / AMOUNT_MULTIPLIER)
 
-	const reward = await staking.tokenEarned(signers[1].address)
-	console.log('Reward', reward)
+	//const reward = await staking.tokenEarned(signers[1].address)
+	//console.log('Reward', reward)
 
 	await time.increase(10)
 
@@ -87,11 +89,11 @@ export const complexScenario = async function () {
 	await staking.connect(signers[2]).compound()
 	await staking.connect(signers[3]).compound()
 
-	const reward1 = await staking.connect(signers[1]).tokenEarned(signers[1].address)
-	const reward2 = await staking.connect(signers[2]).tokenEarned(signers[2].address)
-	const reward3 = await staking.connect(signers[3]).tokenEarned(signers[3].address)
+	// const reward1 = await staking.connect(signers[1]).tokenEarned(signers[1].address)
+	// const reward2 = await staking.connect(signers[2]).tokenEarned(signers[2].address)
+	// const reward3 = await staking.connect(signers[3]).tokenEarned(signers[3].address)
 
-	console.log('Total reward', reward1 + reward2 + reward3)
+	//console.log('Total reward', reward1 + reward2 + reward3)
 
 	await staking.connect(signers[1]).getReward()
 	await staking.connect(signers[2]).getReward()
