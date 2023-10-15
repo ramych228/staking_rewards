@@ -80,7 +80,7 @@ export const notifyAndStakerStake = function () {
 
         await staking.notifyTokenRewardAmount(tokenRewardAmount);
 
-        await time.increaseTo(await staking.tokenPeriodFinish() - 26n);
+        await time.increaseTo(await staking.tokenPeriodFinish() - ((duration / 2n) + 1n));
         await staking.connect(staker).stake(tokenRewardAmount / 10n);
         await time.increaseTo(await staking.tokenPeriodFinish() + 1n);
 
@@ -97,7 +97,7 @@ export const notifyAndStakerStake = function () {
 
         await staking.notifyNativeRewardAmount(nativeRewardAmount, {value: nativeRewardAmount});
 
-        await time.increaseTo(await staking.nativePeriodFinish() - 26n);
+        await time.increaseTo(await staking.nativePeriodFinish() - ((duration / 2n) + 1n));
         await staking.connect(staker).stake(nativeRewardAmount / 10n);
         await time.increaseTo(await staking.nativePeriodFinish() + 1n);
         await staking.connect(staker).exit();
