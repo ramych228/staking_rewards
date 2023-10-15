@@ -1,5 +1,5 @@
 import { notifyAndStakerStake } from './notifyAndStakerStake'
 
 export const oneStaker = function () {
-	it('staking before notifyToken and getting all the reward', notifyAndStakerStake)
+	describe('Staking, Notify and getting all reward', notifyAndStakerStake)
 }
