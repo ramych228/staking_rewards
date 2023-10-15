@@ -161,12 +161,12 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 	}
 
 	function tokenEarned(address account) internal view returns (uint256) {
-		console.log("\n", "<-------earned------->");
-		console.log("balanceLP[acc]: ", userVariables[account].balanceLP);
-		console.log("userBP[acc]: ", userVariables[account].balanceBP);
-		console.log("st[acc]: ", userVariables[account].balanceST);
-		console.log("(getTokenMultiplier() - userVariables[account].userTokenMultiplierPaid):", (getTokenMultiplier() - userVariables[account].userTokenMultiplierPaid));
-		console.log("<------end-earned------->");
+		// console.log("\n", "<-------earned------->");
+		// console.log("balanceLP[acc]: ", userVariables[account].balanceLP);
+		// console.log("userBP[acc]: ", userVariables[account].balanceBP);
+		// console.log("st[acc]: ", userVariables[account].balanceST);
+		// console.log("(getTokenMultiplier() - userVariables[account].userTokenMultiplierPaid):", (getTokenMultiplier() - userVariables[account].userTokenMultiplierPaid));
+		// console.log("<------end-earned------->");
 		return
 			((userVariables[account].balanceLP +
 				userVariables[account].balanceST +
@@ -312,28 +312,28 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 					nativeRewardRate;
 			}
 
-			updateBonusPoints(account);
-			updateVesting(account);
+			userPreviousVariables = updateBonusPoints(account, userPreviousVariables);
+			userPreviousVariables = updateVesting(account, userPreviousVariables);
 
 			lastPoolUpdateTime = lastUpdateTime;
 			userPreviousVariables.userLastUpdateTime = lastUpdateTime;
 			userPreviousVariables.balanceMultiplierPaid = balanceMultiplierStored;
 		}
 
-		console.log("<---------------updRewDEBUG---------->");
-		console.log("rewards[addr]", userPreviousVariables.rewards, account);
-		console.log("lp[addr]", userPreviousVariables.balanceLP);
-		console.log("bp[addr]", userPreviousVariables.balanceBP);
-		console.log("st[addr]", userPreviousVariables.balanceST);
+		// console.log("<---------------updRewDEBUG---------->");
+		// console.log("rewards[addr]", userPreviousVariables.rewards, account);
+		// console.log("lp[addr]", userPreviousVariables.balanceLP);
+		// console.log("bp[addr]", userPreviousVariables.balanceBP);
+		// console.log("st[addr]", userPreviousVariables.balanceST);
 
-		console.log("lp total", totalSupplyLP);
-		console.log("bp total", totalSupplyBP);
-		console.log("st total", totalSupplyST);
+		// console.log("lp total", totalSupplyLP);
+		// console.log("bp total", totalSupplyBP);
+		// console.log("st total", totalSupplyST);
 
-		console.log("balanceMultiplierStored", balanceMultiplierStored);
-        console.log("nativeMultiplierStored", nativeMultiplierStored);
-        console.log("tokenMultiplierStored", tokenMultiplierStored);
-		console.log("<------------END---updRewDEBUG---------->");
+		// console.log("balanceMultiplierStored", balanceMultiplierStored);
+        // console.log("nativeMultiplierStored", nativeMultiplierStored);
+        // console.log("tokenMultiplierStored", tokenMultiplierStored);
+		// console.log("<------------END---updRewDEBUG---------->");
 
 		userVariables[account] = userPreviousVariables;
 		_;
@@ -359,26 +359,29 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 		balanceMultiplierStored = getBalanceMultiplier();
 	}
 
-	function updateBonusPoints(address account) internal {
+	function updateBonusPoints(address account, UserVariables memory userPreviousVariables) internal returns (UserVariables memory) {
 		uint256 increaseOfBP = (lastTimeRewardApplicable() - Math.min(userVariables[account].userLastUpdateTime, lastUpdateTime)) *
-			userVariables[account].balanceLP / ONE_YEAR_IN_SECS;
+			userPreviousVariables.balanceLP / ONE_YEAR_IN_SECS;
 
 		totalSupplyBP += increaseOfBP;
-		userVariables[account].balanceBP += increaseOfBP;
+		userPreviousVariables.balanceBP += increaseOfBP;
+
+		return userPreviousVariables;
 	}
 
-	function updateVesting(address account) internal {
-		if ((Math.min(block.timestamp, userVariables[account].vestingFinishTime) < userVariables[account].userLastUpdateTime)) {
-			return;
-		}
+	function updateVesting(address account, UserVariables memory userPreviousVariables) internal returns (UserVariables memory) {
+		require((Math.min(block.timestamp, userVariables[account].vestingFinishTime) > userVariables[account].userLastUpdateTime), "Error");
+			
 
-		uint256 increaseOfNC = ((Math.min(block.timestamp, userVariables[account].vestingFinishTime) -
-				userVariables[account].userLastUpdateTime) *
-				Math.min(userVariables[account].balanceVST, userVariables[account].balanceLP / 10)) /
+		uint256 increaseOfNC = ((Math.min(block.timestamp, userPreviousVariables.vestingFinishTime) -
+				userPreviousVariables.userLastUpdateTime) *
+				Math.min(userVariables[account].balanceVST, userPreviousVariables.balanceLP / VESTING_CONST)) /
 			ONE_YEAR_IN_SECS;
 
-		userVariables[account].balanceVST -= increaseOfNC;
-		userVariables[account].balanceNC += increaseOfNC;
+		userPreviousVariables.balanceVST -= increaseOfNC;
+		userPreviousVariables.balanceNC += increaseOfNC;
+
+		return userPreviousVariables;
 	}
 
 	/* ========== EVENTS ========== */
