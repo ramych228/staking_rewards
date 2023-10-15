@@ -369,8 +369,10 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 		return userPreviousVariables;
 	}
 
-	function updateVesting(address account, UserVariables memory userPreviousVariables) internal returns (UserVariables memory) {
-		require((Math.min(block.timestamp, userVariables[account].vestingFinishTime) > userVariables[account].userLastUpdateTime), "Error");
+	function updateVesting(address account, UserVariables memory userPreviousVariables) internal view returns (UserVariables memory) {
+		if (Math.min(block.timestamp, userVariables[account].vestingFinishTime) > userVariables[account].userLastUpdateTime) {
+			return userPreviousVariables;
+		}
 			
 
 		uint256 increaseOfNC = ((Math.min(block.timestamp, userPreviousVariables.vestingFinishTime) -
