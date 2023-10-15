@@ -1,13 +1,13 @@
 import { expect } from 'chai'
 import { getStakingContractsWithStakersAndRewards } from './_.fixtures'
 import { time } from '@nomicfoundation/hardhat-toolbox/network-helpers'
-import { StakingRewards } from '../typechain-types'
 import { ContractTransactionResponse } from 'ethers'
+import { Staking } from '../../typechain-types'
 
 export async function expectUpdateRewardToBeCalled(
 	func: () => Promise<ContractTransactionResponse>,
 	sender: any,
-	staking: StakingRewards,
+	staking: Staking,
 	signers: any[]
 ) {
 	/* --- Get variables for later check that it have been modified --- */

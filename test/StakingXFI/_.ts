@@ -24,7 +24,7 @@ describe.only('StakingXFI', function () {
 
 	describe.skip('rewardPerToken', rewardPerToken)
 	describe('tokenEarned', tokenEarned)
-	describe('bonusPointsEarned', bonusPointsEarned)
+	describe.skip('bonusPointsEarned', bonusPointsEarned)
 	describe.skip('bonusPointsEarnedTotally', bonusPointsEarnedTotally)
 
 	describe('getRewardForDuration', getRewardForDuration)

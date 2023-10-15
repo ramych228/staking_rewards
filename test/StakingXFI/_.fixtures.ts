@@ -1,14 +1,12 @@
 import { ethers } from 'hardhat'
-import { ERC20Mintable__factory } from '../../typechain-types'
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers'
 import { expect } from 'chai'
 
-
 async function deployStaking() {
-	const ERC20 = (await ethers.getContractFactory('ERC20Mintable')) as ERC20Mintable__factory
+	const ERC20 = await ethers.getContractFactory('ERC20Mintable')
 	const rewardToken = await ERC20.deploy('Reward Token', 'RWRD')
 	const stakingToken = await ERC20.deploy('Staking Token', 'STKNG')
-	
+
 	const signers = await ethers.getSigners()
 	const owner = signers[0]
 
@@ -18,7 +16,6 @@ async function deployStaking() {
 		await rewardToken.getAddress(),
 		await stakingToken.getAddress()
 	)
-
 
 	return {
 		rewardToken,

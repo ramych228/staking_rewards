@@ -14,7 +14,7 @@ export const bonusPointsEarned = function () {
 
 		/* === Initialize rewards === */
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards)
@@ -25,9 +25,11 @@ export const bonusPointsEarned = function () {
 		const stake = await staking.balanceLPOf(signers[1].address)
 
 		// 1 BP
-		let calculatedEarnedBonusPoints = (stake * tokenRewardsDuration) / yearInSeconds
+		let calculatedEarnedBonusPoints = stake * tokenRewardsDuration
 
-		let earnedBonusPoints = await staking.bonusPointsEarned(signers[1].address)
+		await staking.connect(signers[1]).compound()
+
+		let earnedBonusPoints = (await staking.userVariables(signers[1].address)).balanceBP
 		expect(earnedBonusPoints).to.be.eq(calculatedEarnedBonusPoints)
 	})
 
@@ -36,7 +38,7 @@ export const bonusPointsEarned = function () {
 
 		/* === Initialize rewards === */
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards)
@@ -46,7 +48,7 @@ export const bonusPointsEarned = function () {
 		await time.increase(tokenRewardsDuration)
 
 		// 1 token
-		const stake = await staking.balanceLPOf(signers[1].address)
+		const stake = await staking.balanceOf(signers[1].address)
 
 		// 1 BP
 		let calculatedEarnedBonusPoints = (stake * tokenRewardsDuration) / yearInSeconds
@@ -70,7 +72,7 @@ export const bonusPointsEarned = function () {
 
 		/* === Initialize rewards === */
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards)
@@ -96,7 +98,7 @@ export const bonusPointsEarned = function () {
 
 		/* === Initialize rewards === */
 
-		const rewards = await rewardToken.balanceLPOf(await staking.getAddress())
+		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards)
@@ -105,9 +107,9 @@ export const bonusPointsEarned = function () {
 
 		await time.increase(tokenRewardsDuration / 2n)
 
-		const stake1Initial = await staking.balanceLPOf(signers[1].address)
-		const stake2Initial = await staking.balanceLPOf(signers[2].address)
-		const stake3Initial = await staking.balanceLPOf(signers[3].address)
+		const stake1Initial = await staking.balanceOf(signers[1].address)
+		const stake2Initial = await staking.balanceOf(signers[2].address)
+		const stake3Initial = await staking.balanceOf(signers[3].address)
 
 		const totalSupplyBefore = await staking.totalSupplyLP()
 
@@ -116,9 +118,9 @@ export const bonusPointsEarned = function () {
 		await staking.connect(signers[2]).stake(amount * 5n)
 		await staking.connect(signers[3]).stake(amount * 3n)
 
-		const stake1End = await staking.balanceLPOf(signers[1].address)
-		const stake2End = await staking.balanceLPOf(signers[2].address)
-		const stake3End = await staking.balanceLPOf(signers[3].address)
+		const stake1End = await staking.balanceOf(signers[1].address)
+		const stake2End = await staking.balanceOf(signers[2].address)
+		const stake3End = await staking.balanceOf(signers[3].address)
 
 		const totalSupplyAfter = await staking.totalSupplyLP()
 
