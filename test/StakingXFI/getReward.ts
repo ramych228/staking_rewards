@@ -60,7 +60,8 @@ export const getReward = function () {
 		// Called to update 'rewards' mapping
 		await staking.connect(signers[1]).getReward()
 
-		const rewardsForUserAfterGetReward = await staking.rewards(signers[1].address)
+		const vars = await staking.userVariables(signers[1].address)
+		const rewardsForUserAfterGetReward = vars.rewards
 		expect(rewardsForUserAfterGetReward).to.be.eq(0)
 	})
 

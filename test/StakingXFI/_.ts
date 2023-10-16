@@ -27,6 +27,7 @@ describe.only('StakingXFI', function () {
 	// describe('bonusPointsEarned', bonusPointsEarned)
 	// describe.skip('bonusPointsEarnedTotally', bonusPointsEarnedTotally)
 
+
 	// describe('getRewardForDuration', getRewardForDuration)
 	// describe('lastTimeRewardApplicable', lastTimeRewardApplicable)
 
