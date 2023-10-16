@@ -65,7 +65,7 @@ export const notifyTwoTimes = function () {
         await staking.notifyTokenRewardAmount(tokenRewardAmount1);
 
         await time.increaseTo(await staking.tokenPeriodFinish() - ((duration / 2n) + 1n));
-        await staking.connect(staker).getReward()
+        await staking.connect(staker).getReward();
 
         const balanceChange = tokenRewardAmount1 / 2n;
         expect(await rewardToken.balanceOf(staker)).to.approximately(balanceChange, 100n);
