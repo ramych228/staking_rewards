@@ -27,7 +27,7 @@ describe("StakingRewards", function () {
       const AMOUNT_MULTIPLIER = await deployedStaking.AMOUNT_MULTIPLIER();
       const stakers = [staker1, staker2, staker3];
       for (let staker of stakers) {
-          const stakerBalance = ethers.parseEther("10");
+          const stakerBalance = ethers.parseEther("100000");
           await deployedStakingToken.mint(staker.address, stakerBalance);
           await deployedStakingToken.connect(staker).approve(await deployedStaking.getAddress(), stakerBalance / 10n);
       }
@@ -38,8 +38,8 @@ describe("StakingRewards", function () {
   async function notifyNativeRewardAmountStaking() {
       const { deployedStaking, deployedStakingToken, deployedRewardToken, owner, staker1, staker2, staker3, AMOUNT_MULTIPLIER } = await loadFixture(deploy60daysStakingRewardsFixture);
       // const reward = ethers.parseEther("1");
-      const reward = 100;
-      const duration = 50;
+      const reward = ethers.parseEther("100");
+      
 
       await deployedStaking.notifyNativeRewardAmount(reward, {value: reward});
       return { deployedStaking, deployedStakingToken, deployedRewardToken, owner, staker1, staker2, staker3, AMOUNT_MULTIPLIER };
@@ -56,45 +56,64 @@ describe("StakingRewards", function () {
 
   describe("Simulation", function () {
 
-      // it("Native Staking", async function () {
-      //     const { staker1, staker2, deployedStaking } = await loadFixture(deploy60daysStakingRewardsFixture);
-      //     const {} = await loadFixture(notifyNativeRewardAmountStaking);
+      it("Native Staking", async function () {
+          const { staker1, staker2, staker3, deployedStaking } = await loadFixture(deploy60daysStakingRewardsFixture);
+          const {} = await loadFixture(notifyNativeRewardAmountStaking);
 
-      //     await deployedStaking.connect(staker1).stake(10);
+          await deployedStaking.connect(staker1).stake(ethers.parseEther("1"));
+          await deployedStaking.connect(staker2).stake(ethers.parseEther("2"));
+          await deployedStaking.connect(staker3).stake(ethers.parseEther("3"));
 
-      //     time.increaseTo((await deployedStaking._nativePeriodFinish()) - 25n);
+          time.increase((await deployedStaking.nativeRewardsDuration()) / 3n);
 
-      //     await deployedStaking.connect(staker2).stake(10);
-
-      //     time.increaseTo((await deployedStaking._nativePeriodFinish()));
-
-      //     await deployedStaking.connect(staker1).vest(1);
-      //     await deployedStaking.connect(staker2).vest(1);
-          
-      // })
-
-      it("Token Staking", async function () {
-          const { staker1, staker2, deployedStaking } = await loadFixture(notifyTokenRewardAmountStaking);
-          
-
-          console.log("await deployedStaking.connect(staker1).stake(10);");
-          await deployedStaking.connect(staker1).stake(10);
-
-          await time.increaseTo((await deployedStaking.tokenPeriodFinish()) - 25n);
-          console.log("finish: ", (await deployedStaking.tokenPeriodFinish()))
-          console.log("cur.time: ", await time.latest())
-
-          console.log("await deployedStaking.connect(staker2).stake(10);");
-          await deployedStaking.connect(staker2).stake(10);
-
-          time.increaseTo((await deployedStaking.tokenPeriodFinish()));
-
-          console.log("await deployedStaking.connect(staker1).getReward();");
           await deployedStaking.connect(staker1).getReward();
-          console.log("await deployedStaking.connect(staker2).getReward();");
           await deployedStaking.connect(staker2).getReward();
+          await deployedStaking.connect(staker3).getReward();
+
+          console.log("staker1 st balance:", await deployedStaking.connect(staker1).balanceSTOf(staker1));
+          console.log("staker2 st balance:", await deployedStaking.connect(staker2).balanceSTOf(staker2));
+          console.log("staker3 st balance:", await deployedStaking.connect(staker3).balanceSTOf(staker3));
+
+          await deployedStaking.connect(staker1).stake(ethers.parseEther("2"));
+          await deployedStaking.connect(staker2).stake(ethers.parseEther("1"));
+          await deployedStaking.connect(staker3).stake(ethers.parseEther("5"));
+
+          time.increase((await deployedStaking.nativeRewardsDuration()) / 3n);
+
+          await deployedStaking.connect(staker1).getReward();
+          await deployedStaking.connect(staker2).getReward();
+          await deployedStaking.connect(staker3).getReward();
+
+          console.log("staker1 st balance:", await deployedStaking.connect(staker1).balanceSTOf(staker1));
+          console.log("staker2 st balance:", await deployedStaking.connect(staker2).balanceSTOf(staker2));
+          console.log("staker3 st balance:", await deployedStaking.connect(staker3).balanceSTOf(staker3));
+
+
           
       })
+
+      // it("Token Staking", async function () {
+      //     const { staker1, staker2, deployedStaking } = await loadFixture(notifyTokenRewardAmountStaking);
+          
+
+      //     console.log("await deployedStaking.connect(staker1).stake(10);");
+      //     await deployedStaking.connect(staker1).stake(10);
+
+      //     await time.increaseTo((await deployedStaking.tokenPeriodFinish()) - 25n);
+      //     console.log("finish: ", (await deployedStaking.tokenPeriodFinish()))
+      //     console.log("cur.time: ", await time.latest())
+
+      //     console.log("await deployedStaking.connect(staker2).stake(10);");
+      //     await deployedStaking.connect(staker2).stake(10);
+
+      //     time.increaseTo((await deployedStaking.tokenPeriodFinish()));
+
+      //     console.log("await deployedStaking.connect(staker1).getReward();");
+      //     await deployedStaking.connect(staker1).getReward();
+      //     console.log("await deployedStaking.connect(staker2).getReward();");
+      //     await deployedStaking.connect(staker2).getReward();
+          
+      // })
   })
   /*
   describe("Basic Tests", function (){

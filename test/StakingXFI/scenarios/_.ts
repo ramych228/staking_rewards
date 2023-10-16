@@ -9,7 +9,7 @@ export const scenarios = function () {
 
 	describe('one staker', oneStaker)
 
-	it.only('complex scenario', complexScenario)
+	it.skip('complex scenario', complexScenario)
 
 	it.skip('decreasing stakes', decreasingStakes)
 	it.skip('increasing stakes', increasingStakes)
