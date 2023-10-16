@@ -64,7 +64,7 @@ async function deployStakingWithStakersAndRewards() {
 async function deployStakingWithStakers() {
 	const { rewardToken, stakingToken, staking, signers, owner, duration } = await loadFixture(deployStaking)
 
-	const amount = ethers.parseEther('100')
+	const amount = ethers.parseEther('100000000000000000000000000')
 
 	await rewardToken.mint(await staking.getAddress(), amount)
 	await rewardToken.mint(owner.address, amount)

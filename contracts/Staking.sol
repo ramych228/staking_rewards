@@ -165,6 +165,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 		// console.log("balanceLP[acc]: ", userVariables[account].balanceLP);
 		// console.log("userBP[acc]: ", userVariables[account].balanceBP);
 		// console.log("st[acc]: ", userVariables[account].balanceST);
+		// console.log("(getTokenMultiplier() - userVariables[account].userTokenMultiplierPaid):", (getTokenMultiplier() - userVariables[account].userTokenMultiplierPaid));
 		// console.log("<------end-earned------->");
 		return
 			((userVariables[account].balanceLP +
@@ -222,7 +223,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 
 	function getReward() public nonReentrant updateReward(msg.sender) {
 		uint256 reward = userVariables[msg.sender].rewards;
-		if (reward > 0) {
+		if (reward != 0) {
 			userVariables[msg.sender].rewards = 0;
 			rewardsToken.safeTransfer(msg.sender, reward / AMOUNT_MULTIPLIER);
 			emit RewardPaid(msg.sender, reward / AMOUNT_MULTIPLIER);
@@ -260,17 +261,16 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 		uint256 reward
 	) external override onlyRewardsDistribution updateReward(address(0)) {
 		if (block.timestamp >= tokenPeriodFinish) {
-			tokenRewardRate = reward / tokenRewardsDuration;
+			tokenRewardRate = reward * AMOUNT_MULTIPLIER / tokenRewardsDuration;
 		} else {
 			uint256 remaining = tokenPeriodFinish - block.timestamp;
 			uint256 leftover = remaining * tokenRewardRate;
-			tokenRewardRate = (reward + leftover) / tokenRewardsDuration;
+			tokenRewardRate = (reward * AMOUNT_MULTIPLIER + leftover) / tokenRewardsDuration;
 		}
 
 		uint balance = rewardsToken.balanceOf(address(this));
 		require(tokenRewardRate <= balance * AMOUNT_MULTIPLIER / tokenRewardsDuration, 'Provided reward too high');
 
-		tokenRewardRate *= AMOUNT_MULTIPLIER;
 		lastUpdateTime = block.timestamp;
 
 		tokenPeriodFinish = block.timestamp + tokenRewardsDuration;
@@ -281,29 +281,29 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 		uint256 amount
 	) external payable override onlyRewardsDistribution updateReward(address(0)) {
 		if (block.timestamp >= nativePeriodFinish) {
-			nativeRewardRate = amount / nativeRewardsDuration;
+			nativeRewardRate = amount * AMOUNT_MULTIPLIER / nativeRewardsDuration;
 		} else {
 			uint256 remaining = nativePeriodFinish - block.timestamp;
 			uint256 leftover = remaining * nativeRewardRate;
-			nativeRewardRate = (amount + leftover) / nativeRewardsDuration;
+			nativeRewardRate = (amount * AMOUNT_MULTIPLIER + leftover) / nativeRewardsDuration;
 		}
 
 		uint balance = address(this).balance;
 		require(nativeRewardRate <= balance * AMOUNT_MULTIPLIER / nativeRewardsDuration, 'Provided reward too high');
 
-		nativeRewardRate *= AMOUNT_MULTIPLIER;
 		lastUpdateTime = block.timestamp;
 		nativePeriodFinish = block.timestamp + nativeRewardsDuration;
 		emit NativeRewardAdded(amount);
 	}
 
 	modifier updateReward(address account) {
+		UserVariables memory userPreviousVariables = userVariables[account];
 		updateStoredVariables();
 
 		lastUpdateTime = lastTimeRewardApplicable();
 
 		if (account != address(0)) {
-			updateUserVariables(account);
+			userPreviousVariables = updateUserVariables(account, userPreviousVariables);
 
 			if (nativePeriodFinish != 0) {
 				totalSupplyST +=
@@ -312,19 +312,19 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 					nativeRewardRate;
 			}
 
-			updateBonusPoints(account);
-			updateVesting(account);
+			userPreviousVariables = updateBonusPoints(account, userPreviousVariables);
+			userPreviousVariables = updateVesting(account, userPreviousVariables);
 
 			lastPoolUpdateTime = lastUpdateTime;
-			userVariables[account].userLastUpdateTime = lastUpdateTime;
-			userVariables[account].balanceMultiplierPaid = balanceMultiplierStored;
+			userPreviousVariables.userLastUpdateTime = lastUpdateTime;
+			userPreviousVariables.balanceMultiplierPaid = balanceMultiplierStored;
 		}
 
 		// console.log("<---------------updRewDEBUG---------->");
-		// console.log("rewards[addr]", userVariables[account].rewards, account);
-		// console.log("lp[addr]", userVariables[account].balanceLP);
-		// console.log("bp[addr]", userVariables[account].balanceBP);
-		// console.log("st[addr]", userVariables[account].balanceST);
+		// console.log("rewards[addr]", userPreviousVariables.rewards, account);
+		// console.log("lp[addr]", userPreviousVariables.balanceLP);
+		// console.log("bp[addr]", userPreviousVariables.balanceBP);
+		// console.log("st[addr]", userPreviousVariables.balanceST);
 
 		// console.log("lp total", totalSupplyLP);
 		// console.log("bp total", totalSupplyBP);
@@ -335,56 +335,55 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
         // console.log("tokenMultiplierStored", tokenMultiplierStored);
 		// console.log("<------------END---updRewDEBUG---------->");
 
+		userVariables[account] = userPreviousVariables;
 		_;
 	}
 
-	function updateUserVariables(address account) internal {
-		userVariables[account].rewards += tokenEarned(account);
-		userVariables[account].balanceST =
-			nativeEarned(account) -
-			userVariables[account].balanceLP -
-			userVariables[account].balanceBP;
+	function updateUserVariables(address account, UserVariables memory userPreviousVariables) internal view returns (UserVariables memory) {
+		userPreviousVariables.rewards += tokenEarned(account);
+		userPreviousVariables.balanceST =
 
-		userVariables[account].userTokenMultiplierPaid = tokenMultiplierStored;
-		userVariables[account].userNativeMultiplierPaid = nativeMultiplierStored;
+			nativeEarned(account) -
+			userPreviousVariables.balanceLP -
+			userPreviousVariables.balanceBP;
+
+		userPreviousVariables.userTokenMultiplierPaid = tokenMultiplierStored;
+		userPreviousVariables.userNativeMultiplierPaid = nativeMultiplierStored;
+
+		return userPreviousVariables;
 	}
 
 	function updateStoredVariables() internal {
 		tokenMultiplierStored = getTokenMultiplier();
 		nativeMultiplierStored = getNativeMultiplier();
-
 		balanceMultiplierStored = getBalanceMultiplier();
 	}
 
-	function updateBonusPoints(address account) internal {
-		totalSupplyBP +=
-			(lastTimeRewardApplicable() - Math.min(userVariables[account].userLastUpdateTime, lastUpdateTime)) *
-			userVariables[account].balanceLP / ONE_YEAR_IN_SECS;
+	function updateBonusPoints(address account, UserVariables memory userPreviousVariables) internal returns (UserVariables memory) {
+		uint256 increaseOfBP = (lastTimeRewardApplicable() - Math.min(userVariables[account].userLastUpdateTime, lastUpdateTime)) *
+			userPreviousVariables.balanceLP / ONE_YEAR_IN_SECS;
 
-		userVariables[account].balanceBP +=
-			(lastTimeRewardApplicable() - Math.min(userVariables[account].userLastUpdateTime, lastUpdateTime)) *
-			userVariables[account].balanceLP / ONE_YEAR_IN_SECS;
+		totalSupplyBP += increaseOfBP;
+		userPreviousVariables.balanceBP += increaseOfBP;
+
+		return userPreviousVariables;
 	}
 
-	function updateVesting(address account) internal {
-		if (
-			(Math.min(block.timestamp, userVariables[account].vestingFinishTime) <
-				userVariables[account].userLastUpdateTime)
-		) {
-			return;
+	function updateVesting(address account, UserVariables memory userPreviousVariables) internal view returns (UserVariables memory) {
+		if (Math.min(block.timestamp, userVariables[account].vestingFinishTime) < userVariables[account].userLastUpdateTime) {
+			return userPreviousVariables;
 		}
+			
 
-		userVariables[account].balanceVST -=
-			((Math.min(block.timestamp, userVariables[account].vestingFinishTime) -
-				userVariables[account].userLastUpdateTime) *
-				Math.min(userVariables[account].balanceVST, userVariables[account].balanceLP / 10)) /
+		uint256 increaseOfNC = ((Math.min(block.timestamp, userPreviousVariables.vestingFinishTime) -
+				userPreviousVariables.userLastUpdateTime) *
+				Math.min(userVariables[account].balanceVST, userPreviousVariables.balanceLP / VESTING_CONST)) /
 			ONE_YEAR_IN_SECS;
 
-		userVariables[account].balanceNC +=
-			((Math.min(block.timestamp, userVariables[account].vestingFinishTime) -
-				userVariables[account].userLastUpdateTime) *
-				Math.min(userVariables[account].balanceVST, userVariables[account].balanceLP / 10)) /
-			ONE_YEAR_IN_SECS;
+		userPreviousVariables.balanceVST -= increaseOfNC;
+		userPreviousVariables.balanceNC += increaseOfNC;
+
+		return userPreviousVariables;
 	}
 
 	/* ========== EVENTS ========== */
