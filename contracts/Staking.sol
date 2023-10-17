@@ -32,14 +32,13 @@ contract Staking is Ownable, ReentrancyGuard {
 
 	uint256 public tokenPeriodFinish; // finish of tokens earning
 	uint256 public tokenRewardRate = 0; // how many tokens are given to pool every second
-	uint256 public tokenRewardsDuration = 50; // TODO 60 days
+	uint256 public tokenRewardsDuration = 60 days;
 	uint256 public lastUpdateTime = type(uint256).max; // last update of everything stored (check updateReward modifier)
 
 	uint256 public nativePeriodFinish = 0;
 	uint256 public nativeRewardRate = 0;
 	uint256 public nativeRewardsDuration = 50;
 
-	uint256 public lastPoolUpdateTime = type(uint256).max;
 	uint256 public lastBPUpdateTime = type(uint256).max;
 
 	struct UserVariables {
@@ -245,10 +244,16 @@ contract Staking is Ownable, ReentrancyGuard {
 		console.log('LP', userVariables[msg.sender].balanceLP);
 		require(amount * VESTING_CONST <= userVariables[msg.sender].balanceLP, 'You should have more staked LP tokens');
 
-		userVariables[msg.sender].balanceST -= amount;
-		userVariables[msg.sender].balanceVST += amount;
+		UserVariables memory userPreviousVariables = userVariables[msg.sender];
 
-		userVariables[msg.sender].vestingFinishTime = block.timestamp + ONE_YEAR_IN_SECS;
+		userPreviousVariables.balanceST -= amount;
+		totalSupplyST -= amount;
+
+		userPreviousVariables.balanceVST += amount;
+
+		userPreviousVariables.vestingFinishTime = block.timestamp + ONE_YEAR_IN_SECS;
+
+		userVariables[msg.sender] = userPreviousVariables;
 
 		emit Vesting(msg.sender, amount);
 	}
@@ -303,40 +308,38 @@ contract Staking is Ownable, ReentrancyGuard {
 		UserVariables memory userPreviousVariables = userVariables[account];
 		updateStoredVariables();
 
+		// console.log('<---------------updRewDEBUG---------->');
+		// console.log('time: ', lastTimeRewardApplicable(), lastUpdateTime);
+
+		totalSupplyST +=
+			(lastTimeNativeRewardApplicable() - Math.min(lastTimeNativeRewardApplicable(), lastUpdateTime)) *
+			nativeRewardRate;
+
 		lastUpdateTime = lastTimeRewardApplicable();
 
 		if (account != address(0)) {
 			userPreviousVariables = updateUserVariables(account, userPreviousVariables);
 
-			if (nativePeriodFinish != 0) {
-				totalSupplyST +=
-					(lastTimeNativeRewardApplicable() -
-						Math.min(lastPoolUpdateTime, Math.min(lastTimeNativeRewardApplicable(), lastUpdateTime))) *
-					nativeRewardRate;
-			}
-
 			userPreviousVariables = updateBonusPoints(account, userPreviousVariables);
 			userPreviousVariables = updateVesting(account, userPreviousVariables);
 
-			lastPoolUpdateTime = lastUpdateTime;
 			userPreviousVariables.userLastUpdateTime = lastUpdateTime;
 			userPreviousVariables.balanceMultiplierPaid = balanceMultiplierStored;
 		}
 
-		// console.log("<---------------updRewDEBUG---------->");
-		// console.log("rewards[addr]", userPreviousVariables.rewards, account);
-		// console.log("lp[addr]", userPreviousVariables.balanceLP);
-		// console.log("bp[addr]", userPreviousVariables.balanceBP);
-		// console.log("st[addr]", userPreviousVariables.balanceST);
+		// console.log('rewards[addr]', userPreviousVariables.rewards, account);
+		// console.log('lp[addr]', userPreviousVariables.balanceLP);
+		// console.log('bp[addr]', userPreviousVariables.balanceBP);
+		// console.log('st[addr]', userPreviousVariables.balanceST);
 
-		// console.log("lp total", totalSupplyLP);
-		// console.log("bp total", totalSupplyBP);
-		// console.log("st total", totalSupplyST);
+		// console.log('lp total', totalSupplyLP);
+		// console.log('bp total', totalSupplyBP);
+		// console.log('st total', totalSupplyST);
 
-		// console.log("balanceMultiplierStored", balanceMultiplierStored);
-		// console.log("nativeMultiplierStored", nativeMultiplierStored);
-		// console.log("tokenMultiplierStored", tokenMultiplierStored);
-		// console.log("<------------END---updRewDEBUG---------->");
+		// console.log('balanceMultiplierStored', balanceMultiplierStored);
+		// console.log('nativeMultiplierStored', nativeMultiplierStored);
+		// console.log('tokenMultiplierStored', tokenMultiplierStored);
+		// console.log('<------------END---updRewDEBUG---------->');
 
 		userVariables[account] = userPreviousVariables;
 		_;
