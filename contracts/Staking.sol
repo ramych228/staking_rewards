@@ -39,8 +39,6 @@ contract Staking is Ownable, ReentrancyGuard {
 	uint256 public nativeRewardRate = 0;
 	uint256 public nativeRewardsDuration = 50;
 
-	uint256 public lastBPUpdateTime = type(uint256).max;
-
 	struct UserVariables {
 		uint256 userTokenMultiplierPaid;
 		uint256 userNativeMultiplierPaid;
