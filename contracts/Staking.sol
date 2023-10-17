@@ -8,11 +8,6 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 
-// Inheritance
-import './interfaces/IStakingRewards.sol';
-import './RewardsDistributionRecipient.sol';
-import 'hardhat/console.sol';
-
 /// @title Complicated staking contract
 /// @author Monty C. Python
 contract Staking is Ownable, ReentrancyGuard {
@@ -33,11 +28,10 @@ contract Staking is Ownable, ReentrancyGuard {
 	uint256 public tokenPeriodFinish; // finish of tokens earning
 	uint256 public tokenRewardRate = 0; // how many tokens are given to pool every second
 	uint256 public tokenRewardsDuration = 60 days;
-	// uint256 public lastUpdateTime = type(uint256).max; // last update of everything stored (check updateReward modifier)
 
-	uint256 public nativePeriodFinish = 0;
+	uint256 public nativePeriodFinish;
 	uint256 public nativeRewardRate = 0;
-	uint256 public nativeRewardsDuration = 50;
+	uint256 public nativeRewardsDuration = 60 days;
 
 	uint256 public lastNativeUpdateTime;
 	uint256 public lastTokenUpdateTime;
@@ -52,7 +46,6 @@ contract Staking is Ownable, ReentrancyGuard {
 		uint256 balanceNC;
 		uint256 balanceVST;
 		uint256 rewards;
-		uint256 balanceMultiplierPaid;
 		uint256 vestingFinishTime;
 	}
 
@@ -62,7 +55,6 @@ contract Staking is Ownable, ReentrancyGuard {
 	uint256 public totalSupplyBP;
 	uint256 public totalSupplyST;
 
-	uint256 public balanceMultiplierStored = INIT_MULTIPLIER_VALUE;
 	uint256 public nativeMultiplierStored = INIT_MULTIPLIER_VALUE;
 	uint256 public tokenMultiplierStored = 0;
 
@@ -96,41 +88,10 @@ contract Staking is Ownable, ReentrancyGuard {
 		return Math.min(block.timestamp, nativePeriodFinish);
 	}
 
-	// function lastTimeRewardApplicable() public view returns (uint256) {
-	// 	return Math.min(block.timestamp, Math.max(lastTimeTokenRewardApplicable(), lastTimeNativeRewardApplicable()));
-	// }
-
-	function getBalanceMultiplier() public view returns (uint256) {
-		if (totalSupplyLP + totalSupplyST + totalSupplyBP == 0) {
-			return balanceMultiplierStored;
-		}
-
-		// console.log("<-----------getBalanceMultiplier---------------->");
-		// console.log("lastTimeTokenRewardApplicable() - lastUpdateTime", lastTimeTokenRewardApplicable() - lastUpdateTime);
-
-		// console.log("getm1: ", (nativeRewardRate) * (lastTimeTokenRewardApplicable() - lastUpdateTime) * balanceMultiplierStored);
-		// console.log("getm2: ", (totalSupplyBP + totalSupplyLP + totalSupplyST));
-		// console.log("<---------end--getBalanceMultiplier---------------->");
-
-		return
-			balanceMultiplierStored +
-			((nativeRewardRate) * (lastTimeNativeRewardApplicable() - lastNativeUpdateTime) * balanceMultiplierStored) /
-			(totalSupplyBP + totalSupplyLP + totalSupplyST);
-	}
-
 	function getNativeMultiplier() public view returns (uint256) {
 		if (totalSupplyLP + totalSupplyST + totalSupplyBP == 0) {
 			return nativeMultiplierStored;
 		}
-
-		// console.log("<-----------getNM---------------->");
-		// console.log("lTNRA: ", lastTimeNativeRewardApplicable());
-		// console.log("lUT: ", lastUpdateTime);
-		// console.log("lastTimeNativeRewardApplicable() - lastUpdateTime", lastTimeNativeRewardApplicable() - Math.min(lastTimeNativeRewardApplicable(), lastUpdateTime));
-
-		// console.log("nativeMultiplierStored: ", nativeMultiplierStored);
-		// console.log("getm2: ", (totalSupplyBP + totalSupplyLP + totalSupplyST));
-		// console.log("<---------end--getNM---------------->");
 
 		return
 			nativeMultiplierStored +
@@ -143,32 +104,19 @@ contract Staking is Ownable, ReentrancyGuard {
 			return tokenMultiplierStored;
 		}
 
-		// console.log("<-----------getTM---------------->");
-		// console.log("lTTRA: ", lastTimeTokenRewardApplicable());
-		// console.log("lUT: ", lastUpdateTime);
-		// console.log("time:", lastTimeTokenRewardApplicable() - Math.min(lastTimeTokenRewardApplicable(), lastUpdateTime));
-		// console.log("tMS: ", tokenMultiplierStored);
-		// console.log("get TS: ", (totalSupplyBP + totalSupplyLP + totalSupplyST));
-		// console.log("<---------end--getTM---------------->");
-
 		return
 			tokenMultiplierStored +
-			((lastTimeTokenRewardApplicable() - lastTokenUpdateTime) * balanceMultiplierStored * tokenRewardRate) /
+			((lastTimeTokenRewardApplicable() - lastTokenUpdateTime) * nativeMultiplierStored * tokenRewardRate) /
 			(totalSupplyBP + totalSupplyLP + totalSupplyST);
 	}
 
 	function tokenEarned(address account) internal view returns (uint256) {
 		UserVariables memory userPreviousVariables = userVariables[account];
-		// console.log("\n", "<-------earned------->");
-		// console.log("balanceLP[acc]: ", userVariables[account].balanceLP);
-		// console.log("userBP[acc]: ", userVariables[account].balanceBP);
-		// console.log("st[acc]: ", userVariables[account].balanceST);
-		// console.log("(getTokenMultiplier() - userVariables[account].userTokenMultiplierPaid):", (getTokenMultiplier() - userVariables[account].userTokenMultiplierPaid));
-		// console.log("<------end-earned------->");
+
 		return
 			((userPreviousVariables.balanceLP + userPreviousVariables.balanceST + userPreviousVariables.balanceBP) *
 				(getTokenMultiplier() - userPreviousVariables.userTokenMultiplierPaid)) /
-			Math.max(userPreviousVariables.balanceMultiplierPaid, INIT_MULTIPLIER_VALUE);
+			Math.max(userPreviousVariables.userNativeMultiplierPaid, INIT_MULTIPLIER_VALUE);
 	}
 
 	function nativeEarned(address account) internal view returns (uint256) {
@@ -241,9 +189,6 @@ contract Staking is Ownable, ReentrancyGuard {
 		uint256 balance = userVariables[msg.sender].balanceST;
 
 		require(amount <= balance, 'Cannot vest more then balance');
-		console.log('Amount', amount);
-		console.log('Vesting const', VESTING_CONST);
-		console.log('LP', userVariables[msg.sender].balanceLP);
 		require(amount * VESTING_CONST <= userVariables[msg.sender].balanceLP, 'You should have more staked LP tokens');
 
 		UserVariables memory userPreviousVariables = userVariables[msg.sender];
@@ -260,8 +205,20 @@ contract Staking is Ownable, ReentrancyGuard {
 		emit Vesting(msg.sender, amount);
 	}
 
-	function compound() external updateReward(msg.sender) {
-		// hui
+	function compoundBP() external updateReward(msg.sender) {}
+
+	function getUserData() external updateReward(msg.sender) returns (uint256, uint256, uint256, uint256, uint256) {
+		/// @dev should be static call, b/c pool didnt change after this change (just don't spend gas if you can)
+
+		UserVariables memory userCurrentVariables = userVariables[msg.sender];
+
+		return (
+			userCurrentVariables.balanceLP / AMOUNT_MULTIPLIER,
+			userCurrentVariables.balanceST / AMOUNT_MULTIPLIER,
+			userCurrentVariables.balanceNC / AMOUNT_MULTIPLIER,
+			userCurrentVariables.balanceST / AMOUNT_MULTIPLIER,
+			userCurrentVariables.balanceVST / AMOUNT_MULTIPLIER
+		);
 	}
 
 	function exit() external {
@@ -310,12 +267,8 @@ contract Staking is Ownable, ReentrancyGuard {
 		UserVariables memory userPreviousVariables = userVariables[account];
 		updateStoredVariables();
 
-		// console.log('<---------------updRewDEBUG---------->');
-		// console.log('time: ', lastTimeRewardApplicable(), lastUpdateTime);
-
 		totalSupplyST +=
 			(lastTimeNativeRewardApplicable() - Math.min(lastTimeNativeRewardApplicable(), lastNativeUpdateTime)) *
-
 			nativeRewardRate;
 
 		lastNativeUpdateTime = lastTimeNativeRewardApplicable();
@@ -328,23 +281,7 @@ contract Staking is Ownable, ReentrancyGuard {
 			userPreviousVariables = updateVesting(account, userPreviousVariables);
 
 			userPreviousVariables.userLastUpdateTime = block.timestamp;
-
-			userPreviousVariables.balanceMultiplierPaid = balanceMultiplierStored;
 		}
-
-		// console.log('rewards[addr]', userPreviousVariables.rewards, account);
-		// console.log('lp[addr]', userPreviousVariables.balanceLP);
-		// console.log('bp[addr]', userPreviousVariables.balanceBP);
-		// console.log('st[addr]', userPreviousVariables.balanceST);
-
-		// console.log('lp total', totalSupplyLP);
-		// console.log('bp total', totalSupplyBP);
-		// console.log('st total', totalSupplyST);
-
-		// console.log('balanceMultiplierStored', balanceMultiplierStored);
-		// console.log('nativeMultiplierStored', nativeMultiplierStored);
-		// console.log('tokenMultiplierStored', tokenMultiplierStored);
-		// console.log('<------------END---updRewDEBUG---------->');
 
 		userVariables[account] = userPreviousVariables;
 		_;
@@ -369,7 +306,6 @@ contract Staking is Ownable, ReentrancyGuard {
 	function updateStoredVariables() internal {
 		tokenMultiplierStored = getTokenMultiplier();
 		nativeMultiplierStored = getNativeMultiplier();
-		balanceMultiplierStored = getBalanceMultiplier();
 	}
 
 	function updateBonusPoints(
