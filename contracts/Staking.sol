@@ -153,7 +153,7 @@ contract Staking is Ownable, ReentrancyGuard {
 
 			require(sent, 'Native transfer failed');
 
-			emit TokenRewardPaid(msg.sender, reward / AMOUNT_MULTIPLIER);
+			emit NativeRewardPaid(msg.sender, reward / AMOUNT_MULTIPLIER);
 		}
 
 		userVariables[msg.sender] = userPreviousVariables;
@@ -355,5 +355,6 @@ contract Staking is Ownable, ReentrancyGuard {
 	event Staked(address indexed user, uint256 amount);
 	event Withdrawn(address indexed user, uint256 amount);
 	event TokenRewardPaid(address indexed user, uint256 reward);
+	event NativeRewardPaid(address indexed user, uint256 reward);
 	event Vesting(address indexed user, uint256 reward);
 }

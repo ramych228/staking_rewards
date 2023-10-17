@@ -98,7 +98,7 @@ export const stake = function () {
 	it('reverts if user doesn`t have enough funds or enough allowance', async function () {
 		const { staking, signers, stakingToken } = await getStakingContractsWithStakersAndRewards()
 
-		const amount = BigInt(100e18)
+		const amount = BigInt(1000e18)
 		const stakeWithoutEnoughApprove = staking.connect(signers[1]).stake(amount)
 
 		await expect(stakeWithoutEnoughApprove).to.be.revertedWith('ERC20: insufficient allowance')

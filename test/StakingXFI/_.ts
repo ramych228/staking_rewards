@@ -9,6 +9,7 @@ import { withdraw } from './withdraw'
 import { bonusPoints } from './bonusPoints'
 import { notifyNativeRewardAmount } from './notifyNativeRewardAmount'
 import { vest } from './vest'
+import { getNativeReward } from './getNativeReward'
 
 describe('StakingXFI', function () {
 	/* --- Fixtures --- */
@@ -24,8 +25,9 @@ describe('StakingXFI', function () {
 	describe('stake', stake)
 	describe('withdraw', withdraw)
 	describe('getReward', getReward)
+	describe('getNativeReward', getNativeReward)
 	describe('exit', exit)
-	describe.only('vest', vest)
+	describe('vest', vest)
 	describe('notifyTokenRewardAmount', notifyTokenRewardAmount)
 	describe('notifyNativeRewardAmount', notifyNativeRewardAmount)
 
