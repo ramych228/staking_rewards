@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { getStakingContracts, getStakingContractsWithStakersAndRewards } from './_.fixtures'
+import { getStakingContractsWithStakersAndRewards } from './_.fixtures'
 import { time } from '@nomicfoundation/hardhat-toolbox/network-helpers'
 import { expectUpdateRewardToBeCalled } from './updateReward'
 
@@ -28,17 +28,19 @@ export const withdraw = function () {
 		await expect(withdrawWithZeroAmount).to.be.rejectedWith('Cannot withdraw 0')
 	})
 
-	it('decreases totalSupplyLP on amount withdrawn', async function () {
+	it('decreases totalSupplyLP on any amount withdrawn', async function () {
 		const { staking, signers } = await getStakingContractsWithStakersAndRewards()
 
 		const amounts = [1e18, 2e18, 1e9]
 
+		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
+
 		for (const [i, amount] of amounts.entries()) {
-			const totalSupplyBefore = await staking.totalSupplyLP()
+			const totalSupplyBefore = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
 
 			await staking.connect(signers[i + 1]).withdraw(BigInt(amount))
 
-			const totalSupplyAfter = await staking.totalSupplyLP()
+			const totalSupplyAfter = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
 
 			expect(totalSupplyAfter).to.be.eq(totalSupplyBefore - BigInt(amount))
 		}
@@ -58,6 +60,24 @@ export const withdraw = function () {
 
 			expect(userBalanceAfter).to.be.eq(userBalanceBefore - BigInt(amount))
 		}
+	})
+
+	it('full withdraw makes LP and BP balances = 0', async function () {
+		const { staking, signers, stakingToken } = await getStakingContractsWithStakersAndRewards()
+
+		const amount = BigInt(3e18)
+
+		await stakingToken.connect(signers[3]).transfer(signers[4].address, amount)
+		await stakingToken.connect(signers[4]).approve(await staking.getAddress(), amount)
+
+		await staking.connect(signers[4]).stake(amount)
+		await staking.connect(signers[4]).withdraw(amount)
+
+		const userLPBalance = await staking.balanceLPOf(signers[4].address)
+		const userBPBalance = await staking.balanceBPOf(signers[4].address)
+
+		expect(userLPBalance).to.be.eq(0)
+		expect(userBPBalance).to.be.eq(0)
 	})
 
 	it('doesn`t change balances of other users', async function () {
@@ -109,7 +129,7 @@ export const withdraw = function () {
 	})
 
 	it('emits Withdrawn event', async function () {
-		const { staking, signers, stakingToken } = await getStakingContractsWithStakersAndRewards()
+		const { staking, signers } = await getStakingContractsWithStakersAndRewards()
 
 		const amount = BigInt(1e18)
 		const tx = staking.connect(signers[1]).withdraw(amount)
@@ -128,12 +148,15 @@ export const withdraw = function () {
 		await time.increase(tokenRewardsDuration / 3n)
 
 		const balance = await staking.balanceLPOf(signers[1].address)
-		await staking.connect(signers[1]).withdraw(balance)
-		const earnedRewards = await staking.rewards(signers[1])
+		await staking.connect(signers[1]).exit()
+
+		const rewardsEarned = await rewardToken.balanceOf(signers[1])
 
 		await time.increase(tokenRewardsDuration / 3n)
 
-		expect(await staking.tokenEarned(signers[1])).to.be.eq(earnedRewards)
+		await staking.getReward()
+		const rewardsAfterSomeTime = await rewardToken.balanceOf(signers[1].address)
+		expect(rewardsAfterSomeTime).to.be.eq(rewardsEarned)
 	})
 
 	it('after partial withdrawal user gets less rewards', async function () {
@@ -141,30 +164,27 @@ export const withdraw = function () {
 		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewards)
 
+		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
+
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 		await time.increase(tokenRewardsDuration / 2n)
 
 		const amount = BigInt(2e18)
 		await staking.connect(signers[3]).withdraw(amount)
-		const earnedRewards = await staking.rewards(signers[3])
+		await staking.connect(signers[3]).getReward()
+
+		const earnedRewards = await rewardToken.balanceOf(signers[3])
 
 		await time.increase(tokenRewardsDuration / 2n)
 
-		expect(await staking.tokenEarned(signers[3])).to.be.approximately(earnedRewards + earnedRewards / 2n, 1e13)
-	})
+		await staking.connect(signers[3]).getReward()
 
-	it('full withdraw right after stake returns same amount of tokens', async function () {
-		const { staking, signers, stakingToken } = await getStakingContractsWithStakersAndRewards()
+		const balanceLP = await staking.balanceLPOf(signers[3].address)
+		const totalSupplyLP = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
+		const additionalEarnedRewards = (rewards * balanceLP) / totalSupplyLP / 2n
 
-		const amount = BigInt(3e18)
-
-		await stakingToken.connect(signers[3]).transfer(signers[4].address, amount)
-		await stakingToken.connect(signers[4]).approve(await staking.getAddress(), amount)
-
-		await staking.connect(signers[4]).stake(amount)
-		await staking.connect(signers[4]).withdraw(amount)
-
-		const userBalance = await staking.balanceLPOf(signers[4].address)
-		expect(userBalance).to.be.eq(0)
+		const earnedRewardsAfterSomeTime = await rewardToken.balanceOf(signers[3])
+		const rewardRate = (await staking.tokenRewardRate()) / AMOUNT_MULTIPLIER
+		expect(earnedRewardsAfterSomeTime).to.be.approximately(earnedRewards + additionalEarnedRewards, rewardRate)
 	})
 }

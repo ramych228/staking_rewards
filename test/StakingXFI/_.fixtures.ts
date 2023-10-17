@@ -31,11 +31,12 @@ async function deployStaking() {
 async function deployStakingWithStakersAndRewards() {
 	const { rewardToken, stakingToken, staking, signers, owner } = await loadFixture(deployStaking)
 
-	const amount = ethers.parseEther('100')
+	let amount = ethers.parseEther('100')
 
 	await rewardToken.mint(await staking.getAddress(), amount)
 	await rewardToken.mint(owner.address, amount)
 
+	amount = amount * 10n
 	await stakingToken.mint(signers[1].address, amount)
 	await stakingToken.mint(signers[2].address, amount)
 	await stakingToken.mint(signers[3].address, amount)
@@ -61,9 +62,7 @@ async function deployStakingWithStakersAndRewards() {
 async function deployStakingWithStakers() {
 	const { rewardToken, stakingToken, staking, signers, owner, duration } = await loadFixture(deployStaking)
 
-
-	const amount = ethers.parseEther('10000000')
-
+	const amount = ethers.parseEther('100')
 
 	await rewardToken.mint(await staking.getAddress(), amount)
 	await rewardToken.mint(owner.address, amount)
@@ -100,7 +99,7 @@ export async function getStakingContractWithStakers() {
 
 export const fixtures = function () {
 	it('getStakingContract', async function () {
-		const { rewardToken, staking, stakingToken } = await getStakingContracts()
+		const { rewardToken, stakingToken } = await getStakingContracts()
 
 		expect(await rewardToken.name()).to.be.eq('Reward Token')
 		expect(await rewardToken.symbol()).to.be.eq('RWRD')
@@ -114,6 +113,7 @@ export const fixtures = function () {
 
 	it('getStakingContractWithStakersAndRewards', async function () {
 		const { rewardToken, staking, stakingToken, signers, owner } = await getStakingContractsWithStakersAndRewards()
+		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
 
 		expect(owner.address).to.be.eq(signers[0].address)
 		const totalSupply = await stakingToken.totalSupply()
@@ -130,7 +130,7 @@ export const fixtures = function () {
 		expect(await stakingToken.balanceOf(signers[2].address)).to.be.eq(ethers.parseEther('98'))
 		expect(await stakingToken.balanceOf(signers[3].address)).to.be.eq(ethers.parseEther('97'))
 
-		const stakedTotalSupply = await staking.totalSupplyLP()
+		const stakedTotalSupply = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
 		expect(stakedTotalSupply).to.be.eq(ethers.parseEther('6'))
 	})
 }

@@ -12,8 +12,11 @@ export async function expectUpdateRewardToBeCalled(
 ) {
 	/* --- Get variables for later check that it have been modified --- */
 
-	const rewardPerTokenStored = await staking.rewardPerTokenStored()
+	const tokenMultiplierStored = await staking.tokenMultiplierStored()
+	const nativeMultiplierStored = await staking.nativeMultiplierStored()
+	const balanceMultiplierStored = await staking.balanceMultiplierStored()
 	const lastUpdateTime = await staking.lastUpdateTime()
+	const lastPoolUpdateTime = await staking.lastPoolUpdateTime()
 
 	/* --- Transaction execution --- */
 
@@ -21,31 +24,51 @@ export async function expectUpdateRewardToBeCalled(
 
 	/* --- Get state variables after call --- */
 
-	const rewardPerTokenStoredAfterCall = await staking.rewardPerTokenStored()
+	const tokenMultiplierStoredAfterCall = await staking.tokenMultiplierStored()
+	const nativeMultiplierStoredAfterCall = await staking.nativeMultiplierStored()
+	const balanceMultiplierStoredAfterCall = await staking.balanceMultiplierStored()
+
 	const lastUpdateTimeAfterCall = await staking.lastUpdateTime()
-	const userRewardPerTokenPaidAfterCall = await staking.userRewardPerTokenPaid(sender.address)
+	const lastPoolUpdateTimeAfterCall = await staking.lastPoolUpdateTime()
 
 	/* --- Check that all variables from updateReward() are updated --- */
 
-	// rewardPerTokenStored updated
-	if (rewardPerTokenStored !== 0n) {
-		expect(rewardPerTokenStoredAfterCall, 'rewardPerTokenStored didn`t change').not.to.be.eq(rewardPerTokenStored)
+	// tokenMultiplierStored updated
+	if (tokenMultiplierStoredAfterCall === BigInt(1e30)) {
+		expect(tokenMultiplierStored, 'rewardPerTokenStored didn`t change').not.to.be.eq(tokenMultiplierStoredAfterCall)
 	}
-	expect(rewardPerTokenStoredAfterCall, 'rewardPerTokenStored is not equals').to.be.eq(await staking.rewardPerToken())
 
-	// lastUpdateTime updated
-	expect(lastUpdateTimeAfterCall, 'lastUpdateTime must be changed to later time').to.be.greaterThan(lastUpdateTime)
+	expect(tokenMultiplierStoredAfterCall, 'rewardPerTokenStored is not equals').to.be.eq(
+		await staking.getTokenMultiplier()
+	)
 
-	// rewards - can't check rewards updating because it's modified (makes 0) later in function
-
-	// userRewardPerTokenPaid updated
-	expect(userRewardPerTokenPaidAfterCall).to.be.eq(await staking.rewardPerToken())
-
-	/* --- Check that different staker data is not modified --- */
-	for (const signer of signers) {
-		expect(await staking.rewards(signer.address)).to.be.eq(0)
-		expect(await staking.userRewardPerTokenPaid(signer.address)).to.be.eq(0)
+	// nativeMultiplierStored updated
+	if (nativeMultiplierStoredAfterCall === BigInt(1e30)) {
+		expect(nativeMultiplierStored, 'nativeMultiplierStored didn`t change').not.to.be.eq(
+			nativeMultiplierStoredAfterCall
+		)
 	}
+
+	expect(nativeMultiplierStoredAfterCall, 'nativeMultiplierStored equals').to.be.eq(
+		await staking.getNativeMultiplier()
+	)
+
+	// balanceMultiplierStored updated
+	if (balanceMultiplierStoredAfterCall === BigInt(1e30)) {
+		expect(balanceMultiplierStored, 'balanceMultiplierStored didn`t change').not.to.be.eq(
+			balanceMultiplierStoredAfterCall
+		)
+	}
+
+	expect(balanceMultiplierStoredAfterCall, 'balanceMultiplierStored is equals').to.be.eq(
+		await staking.getBalanceMultiplier()
+	)
+
+	// lastUpdateTime and lastPoolUpdateTime updated
+	expect(lastUpdateTimeAfterCall, 'lastUpdateTime should change').to.be.greaterThan(lastUpdateTime)
+
+	// Updates only if account != address(0)
+	expect(lastPoolUpdateTimeAfterCall, 'lastUpdateTime should change').to.be.greaterThanOrEqual(lastPoolUpdateTime)
 }
 
 // expectUpdateRewardToBeCalled() usage example

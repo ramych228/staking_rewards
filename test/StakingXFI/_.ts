@@ -1,60 +1,50 @@
 import { fixtures } from './_.fixtures'
-import { bonusPointsEarned } from './bonusPointsEarned'
-import { bonusPointsEarnedTotally } from './bonusPointsEarnedTotally'
-import { tokenEarned } from './tokenEarned'
 import { exit } from './exit'
 import { getReward } from './getReward'
-import { getRewardForDuration } from './getRewardForDuration'
-import { lastTimeRewardApplicable } from './lastTimeRewardApplicable'
 import { notifyTokenRewardAmount } from './notifyTokenRewardAmount'
-import { rewardPerToken } from './rewardPerToken'
 import { scenarios } from './scenarios/_'
 import { stake } from './stake'
 import { updateReward } from './updateReward'
 import { withdraw } from './withdraw'
+import { bonusPoints } from './bonusPoints'
+import { notifyNativeRewardAmount } from './notifyNativeRewardAmount'
+import { vest } from './vest'
 
-describe.only('StakingXFI', function () {
+describe('StakingXFI', function () {
 	/* --- Fixtures --- */
 
-	// describe('fixtures', fixtures)
+	describe('fixtures', fixtures)
 
-	// /* --- Basic StakingRewards --- */
+	/* --- View functions --- */
 
-	// /* --- View functions --- */
+	describe('Bonus Points', bonusPoints)
 
-	// describe.skip('rewardPerToken', rewardPerToken)
-	// describe('tokenEarned', tokenEarned)
-	// describe('bonusPointsEarned', bonusPointsEarned)
-	// describe.skip('bonusPointsEarnedTotally', bonusPointsEarnedTotally)
+	/* --- Mutable functions --- */
 
+	describe('stake', stake)
+	describe('withdraw', withdraw)
+	describe('getReward', getReward)
+	describe('exit', exit)
+	describe.only('vest', vest)
+	describe('notifyTokenRewardAmount', notifyTokenRewardAmount)
+	describe('notifyNativeRewardAmount', notifyNativeRewardAmount)
 
-	// describe('getRewardForDuration', getRewardForDuration)
-	// describe('lastTimeRewardApplicable', lastTimeRewardApplicable)
+	/* --- Modifier --- */
 
-	// /* --- Mutable functions --- */
+	describe('updateReward', updateReward)
 
-	// describe('stake', stake)
-	// describe('withdraw', withdraw)
-	// describe('getReward', getReward)
-	// describe('exit', exit)
-	// describe('notifyTokenRewardAmount', notifyTokenRewardAmount)
+	/* --- Modified ERC20 Logic --- */
 
-	// /* --- Modifier --- */
-
-	// describe('updateReward', updateReward)
-
-	// /* --- Modified ERC20 Logic --- */
-
-	// describe('totalSupply', async function () {
-	// 	// changes on stake/unstake
-	// })
-	// describe('transfer', async function () {
-	// 	// non-trasferable
-	// })
-	// describe('transferFrom', async function () {})
-	// describe('allowance', async function () {
-	// 	// non-trasferable
-	// })
+	describe('totalSupply', async function () {
+		// changes on stake/unstake
+	})
+	describe('transfer', async function () {
+		// non-trasferable
+	})
+	describe('transferFrom', async function () {})
+	describe('allowance', async function () {
+		// non-trasferable
+	})
 
 	/* --- Scenarios --- */
 

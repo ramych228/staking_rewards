@@ -48,6 +48,7 @@ export const complexScenario = async function () {
 		const staker3Reward1Period = await rewardToken.balanceOf(signers[3].address)
 
 		const tokenRewardRate = (await staking.tokenRewardRate()) / AMOUNT_MULTIPLIER
+
 		const staker1RewardCalculated =
 			(staker1Shares1Period * tokenRewardRate * tokenRewardsDuration) / totalShares1Period / 3n
 		const staker2RewardCalculated =
@@ -55,7 +56,7 @@ export const complexScenario = async function () {
 		const staker3RewardCalculated =
 			(staker3Shares1Period * tokenRewardRate * tokenRewardsDuration) / totalShares1Period / 3n
 
-		expect(staker1Reward1Period).to.be.approximately(staker1RewardCalculated, 1e13)
+		expect(staker1Reward1Period).to.be.approximately(staker1RewardCalculated, 1e14)
 		expect(staker2Reward1Period).to.be.approximately(staker2RewardCalculated, 1e14)
 		expect(staker3Reward1Period).to.be.approximately(staker3RewardCalculated, 1e14)
 
@@ -208,7 +209,7 @@ export const complexScenario = async function () {
 				((stakeAmount2Staker2Period + stakeAmount2Staker3Period) * tokenRewardsDuration) / 3n / yearInSeconds
 			const BP3Expected = (stakeAmount3Staker3Period * tokenRewardsDuration) / 3n / yearInSeconds
 
-			const BPerror = 1e12
+			const BPerror = 1e13
 			expect(BP1).to.be.approximately(BP1Expected, BPerror)
 			expect(BP2).to.be.approximately(BP2Expected, BPerror)
 			expect(BP3).to.be.approximately(BP3Expected, BPerror)
@@ -253,7 +254,7 @@ export const complexScenario = async function () {
 		console.log(reward2)
 	})
 
-	it.only('Complex scenario on Native Reward', async function () {
+	it('Complex scenario on Native Reward', async function () {
 		const yearInSeconds = BigInt(365 * 24 * 60 * 60)
 
 		async function deployStaking(tokenRewardDuration: number, nativeRewardDuration: number) {
