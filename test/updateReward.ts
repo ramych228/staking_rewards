@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import { getStakingContractsWithStakersAndRewards } from './_.fixtures'
 import { time } from '@nomicfoundation/hardhat-toolbox/network-helpers'
 import { ContractTransactionResponse } from 'ethers'
-import { Staking } from '../../typechain-types'
+import { Staking } from '../typechain-types'
 
 export async function expectUpdateRewardToBeCalled(
 	func: () => Promise<ContractTransactionResponse>,
