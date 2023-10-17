@@ -3,11 +3,13 @@ import { decreasingStakes } from './decreasingStakes'
 import { increasingStakes } from './increasingStakes'
 import { lotsOfStakers } from './lotsOfStakers'
 import { oneStaker } from './oneStaker/_'
+import { notifies } from './multiplyNotifies/_'
 
 export const scenarios = function () {
 	/* --- one staker --- */
 
-	describe('one staker', oneStaker)
+	describe('notifies', notifies);
+	it.skip('one staker', oneStaker)
 
 	it.skip('complex scenario', complexScenario)
 

@@ -236,10 +236,16 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 		require(amount <= balance, 'Cannot vest more then balance');
 		require(amount * VESTING_CONST < userVariables[msg.sender].balanceLP, 'You should have more staked LP tokens');
 
-		userVariables[msg.sender].balanceST -= amount;
-		userVariables[msg.sender].balanceVST += amount;
+		UserVariables memory userPreviousVariables = userVariables[msg.sender];
 
-		userVariables[msg.sender].vestingFinishTime = block.timestamp + ONE_YEAR_IN_SECS;
+		userPreviousVariables.balanceST -= amount;
+		totalSupplyST -= amount;
+
+		userPreviousVariables.balanceVST += amount;
+
+		userPreviousVariables.vestingFinishTime = block.timestamp + ONE_YEAR_IN_SECS;
+
+		userVariables[msg.sender] = userPreviousVariables;
 
 		emit Vesting(msg.sender, amount);
 	}
