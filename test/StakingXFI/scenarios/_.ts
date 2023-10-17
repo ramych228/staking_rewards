@@ -8,7 +8,7 @@ import { notifies } from './multiplyNotifies/_'
 export const scenarios = function () {
 	/* --- one staker --- */
 
-	describe('notifies', notifies);
+	describe('notifies', notifies)
 	it.skip('one staker', oneStaker)
 
 	it.skip('complex scenario', complexScenario)

@@ -34,33 +34,37 @@ export const notifyNativeRewardAmount = function () {
 
 	describe('time condition', function () {
 		it('doesn`t add leftovers if rewards distribution finished', async function () {
-			const { staking, signers, rewardToken } = await getStakingContractsWithStakersAndRewards()
+			const { staking, signers } = await getStakingContractsWithStakersAndRewards()
 			const rewards = BigInt(100e18)
 
 			const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
 			await staking.notifyNativeRewardAmount(rewards, { value: rewards })
 
 			const nativeRewardsDuration = await staking.nativeRewardsDuration()
-			await time.increase(nativeRewardsDuration)
+			await time.increase(nativeRewardsDuration * 2n)
 
 			for (const staker of signers.slice(1, 4)) {
 				await staking.connect(staker).getReward()
 			}
 
 			const leftovers = rewards - (await staking.totalSupplyST()) / AMOUNT_MULTIPLIER
-			const nativeRewardRate = await staking.nativeRewardRate()
+			console.log('Leftovers', leftovers)
 
-			const totalSupplyST = (await staking.totalSupplyST()) / AMOUNT_MULTIPLIER
-			const calculationError = BigInt(1e7)
+			let nativeRewardRate = await staking.nativeRewardRate()
 
 			console.log('Native Reward Rate', nativeRewardRate)
-			// totalSupplyST is nativeRewardRate moe than initialized rewards
+
+			// totalSupplyST is nativeRewardRate more than initialized rewards
+			const totalSupplyST = (await staking.totalSupplyST()) / AMOUNT_MULTIPLIER
+			const calculationError = BigInt(1e7)
+			console.log('Total SUpply ST', totalSupplyST)
 			expect(totalSupplyST).to.be.within(rewards - calculationError, rewards)
 			expect(leftovers).to.be.lessThanOrEqual(calculationError)
 
 			const amount = BigInt(1e18)
-			await rewardToken.transfer(await staking.getAddress(), amount)
 			await staking.notifyNativeRewardAmount(amount, { value: amount })
+
+			nativeRewardRate = await staking.nativeRewardRate()
 
 			const calculatedNativeRewardRate = (amount * AMOUNT_MULTIPLIER) / nativeRewardsDuration
 
@@ -116,7 +120,7 @@ export const notifyNativeRewardAmount = function () {
 		await staking.notifyNativeRewardAmount(rewards, { value: rewards })
 
 		const latestTimestamp = await time.latest()
-		expect(await staking.lastUpdateTime()).to.be.eq(latestTimestamp)
+		expect(await staking.lastNativeUpdateTime()).to.be.eq(latestTimestamp)
 	})
 
 	it('updates nativePeriodFinish to current timestamp + nativeRewardsDuration', async function () {

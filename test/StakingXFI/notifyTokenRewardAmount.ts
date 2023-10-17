@@ -68,11 +68,11 @@ export const notifyTokenRewardAmount = function () {
 
 			await staking.notifyTokenRewardAmount(rewards / 2n)
 
-			await time.increase(tokenRewardsDuration / 2n)
+			await time.increase(tokenRewardsDuration / 2n - 1n)
 
-			for (const staker of signers.slice(1, 4)) {
-				await staking.connect(staker).getReward()
-			}
+			// for (const staker of signers.slice(1, 4)) {
+			// 	await staking.connect(staker).getReward()
+			// }
 
 			const latest = await time.latest()
 			const tokenPeriodFinish = await staking.tokenPeriodFinish()
@@ -80,6 +80,7 @@ export const notifyTokenRewardAmount = function () {
 
 			// 25e18 (half) is not distributed from initialized 50e18
 			const leftovers = (tokenPeriodFinish - BigInt(latest)) * oldRewardRate
+			console.log(leftovers)
 
 			await staking.notifyTokenRewardAmount(rewards / 2n)
 
@@ -106,13 +107,13 @@ export const notifyTokenRewardAmount = function () {
 	})
 
 	it('updates lastUpdateTime to current timestamp', async function () {
-		const { staking, signers, rewardToken } = await getStakingContractsWithStakersAndRewards()
+		const { staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
 		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewards)
 
 		const latestTimestamp = await time.latest()
-		expect(await staking.lastUpdateTime()).to.be.eq(latestTimestamp)
+		expect(await staking.lastTokenUpdateTime()).to.be.eq(latestTimestamp)
 	})
 
 	it('updates tokenPeriodFinish to current timestamp + tokenRewardsDuration', async function () {
@@ -161,7 +162,7 @@ export const notifyTokenRewardAmount = function () {
 
 		await staking.notifyTokenRewardAmount(rewards / 2n)
 
-		await time.increase(tokenRewardsDuration / 2n)
+		await time.increase(tokenRewardsDuration / 2n - 1n)
 
 		const tx = staking.notifyTokenRewardAmount(rewards / 2n)
 
