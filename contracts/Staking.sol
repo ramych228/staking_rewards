@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.19;
 
+import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
@@ -14,7 +15,7 @@ import 'hardhat/console.sol';
 
 /// @title Complicated staking contract
 /// @author Monty C. Python
-contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
+contract Staking is Ownable, ReentrancyGuard {
 	using SafeERC20 for IERC20;
 
 	/* ========== CONSTANTS ========== */
@@ -70,7 +71,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 	constructor(address _rewardsDistribution, address _rewardsToken, address _stakingToken) {
 		rewardsToken = IERC20(_rewardsToken);
 		stakingToken = IERC20(_stakingToken);
-		rewardsDistribution = _rewardsDistribution;
+		transferOwnership(_rewardsDistribution);
 	}
 
 	function balanceBPOf(address account) external view returns (uint256) {
@@ -99,7 +100,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 	// 	return Math.min(block.timestamp, Math.max(lastTimeTokenRewardApplicable(), lastTimeNativeRewardApplicable()));
 	// }
 
-	function getBalanceMultiplier() internal view returns (uint256) {
+	function getBalanceMultiplier() public view returns (uint256) {
 		if (totalSupplyLP + totalSupplyST + totalSupplyBP == 0) {
 			return balanceMultiplierStored;
 		}
@@ -117,7 +118,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 			(totalSupplyBP + totalSupplyLP + totalSupplyST);
 	}
 
-	function getNativeMultiplier() internal view returns (uint256) {
+	function getNativeMultiplier() public view returns (uint256) {
 		if (totalSupplyLP + totalSupplyST + totalSupplyBP == 0) {
 			return nativeMultiplierStored;
 		}
@@ -137,7 +138,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 			(totalSupplyLP + totalSupplyBP + totalSupplyST);
 	}
 
-	function getTokenMultiplier() internal view returns (uint256) {
+	function getTokenMultiplier() public view returns (uint256) {
 		if (totalSupplyLP + totalSupplyST + totalSupplyBP == 0) {
 			return tokenMultiplierStored;
 		}
@@ -182,13 +183,14 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 
 	function stake(uint256 amount) external nonReentrant updateReward(msg.sender) {
 		require(amount != 0, 'Cannot stake 0');
-		amount *= AMOUNT_MULTIPLIER;
 
+		stakingToken.safeTransferFrom(msg.sender, address(this), amount);
+
+		amount *= AMOUNT_MULTIPLIER;
 		userVariables[msg.sender].balanceLP += amount;
 		totalSupplyLP += amount;
 
-		stakingToken.safeTransferFrom(msg.sender, address(this), amount / AMOUNT_MULTIPLIER);
-		emit Staked(msg.sender, amount);
+		emit Staked(msg.sender, amount / AMOUNT_MULTIPLIER);
 	}
 
 	function getNativeReward() public nonReentrant updateReward(msg.sender) {
@@ -200,9 +202,9 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 
 			(bool sent, ) = msg.sender.call{value: reward / AMOUNT_MULTIPLIER}('');
 
-			require(sent, 'Error. Native currency not sent.');
+			require(sent, 'Native transfer failed');
 
-			emit RewardPaid(msg.sender, reward / AMOUNT_MULTIPLIER);
+			emit TokenRewardPaid(msg.sender, reward / AMOUNT_MULTIPLIER);
 		}
 
 		userVariables[msg.sender] = userPreviousVariables;
@@ -225,18 +227,24 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 		uint256 reward = userVariables[msg.sender].rewards;
 		if (reward != 0) {
 			userVariables[msg.sender].rewards = 0;
+
 			rewardsToken.safeTransfer(msg.sender, reward / AMOUNT_MULTIPLIER);
-			emit RewardPaid(msg.sender, reward / AMOUNT_MULTIPLIER);
+			emit TokenRewardPaid(msg.sender, reward / AMOUNT_MULTIPLIER);
 		}
 	}
 
 	function vest(uint amount) public nonReentrant updateReward(msg.sender) {
+		amount *= AMOUNT_MULTIPLIER;
+
 		require(amount != 0, 'Cannot vest 0');
 
 		uint256 balance = userVariables[msg.sender].balanceST;
 
 		require(amount <= balance, 'Cannot vest more then balance');
-		require(amount * VESTING_CONST < userVariables[msg.sender].balanceLP, 'You should have more staked LP tokens');
+		console.log('Amount', amount);
+		console.log('Vesting const', VESTING_CONST);
+		console.log('LP', userVariables[msg.sender].balanceLP);
+		require(amount * VESTING_CONST <= userVariables[msg.sender].balanceLP, 'You should have more staked LP tokens');
 
 		UserVariables memory userPreviousVariables = userVariables[msg.sender];
 
@@ -263,9 +271,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 
 	/* ========== RESTRICTED FUNCTIONS ========== */
 
-	function notifyTokenRewardAmount(
-		uint256 reward
-	) external override onlyRewardsDistribution updateReward(address(0)) {
+	function notifyTokenRewardAmount(uint256 reward) external onlyOwner updateReward(address(0)) {
 		if (block.timestamp >= tokenPeriodFinish) {
 			tokenRewardRate = (reward * AMOUNT_MULTIPLIER) / tokenRewardsDuration;
 		} else {
@@ -283,9 +289,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 		emit TokenRewardAdded(reward);
 	}
 
-	function notifyNativeRewardAmount(
-		uint256 amount
-	) external payable override onlyRewardsDistribution updateReward(address(0)) {
+	function notifyNativeRewardAmount(uint256 amount) external payable onlyOwner updateReward(address(0)) {
 		if (block.timestamp >= nativePeriodFinish) {
 			nativeRewardRate = (amount * AMOUNT_MULTIPLIER) / nativeRewardsDuration;
 		} else {
@@ -311,6 +315,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 
 		totalSupplyST +=
 			(lastTimeNativeRewardApplicable() - Math.min(lastTimeNativeRewardApplicable(), lastNativeUpdateTime)) *
+
 			nativeRewardRate;
 
 		lastNativeUpdateTime = lastTimeNativeRewardApplicable();
@@ -323,6 +328,7 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 			userPreviousVariables = updateVesting(account, userPreviousVariables);
 
 			userPreviousVariables.userLastUpdateTime = block.timestamp;
+
 			userPreviousVariables.balanceMultiplierPaid = balanceMultiplierStored;
 		}
 
@@ -409,6 +415,6 @@ contract Staking is RewardsDistributionRecipient, ReentrancyGuard {
 	event NativeRewardAdded(uint256 reward);
 	event Staked(address indexed user, uint256 amount);
 	event Withdrawn(address indexed user, uint256 amount);
-	event RewardPaid(address indexed user, uint256 reward);
+	event TokenRewardPaid(address indexed user, uint256 reward);
 	event Vesting(address indexed user, uint256 reward);
 }

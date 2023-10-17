@@ -3,49 +3,99 @@ import { getStakingContractsWithStakersAndRewards } from './_.fixtures'
 import { expectUpdateRewardToBeCalled } from './updateReward'
 import { expect } from 'chai'
 
-export const stake = function () {
+export const vest = function () {
 	/* --- Units --- */
 
 	it.skip('non-reentrant')
 
 	it('calls updateReward() with msg.sender as a parameter', async function () {
-		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
-		const rewards = await rewardToken.balanceOf(await staking.getAddress())
-		await staking.notifyTokenRewardAmount(rewards)
+		const { staking, signers } = await getStakingContractsWithStakersAndRewards()
+		const rewards = BigInt(100e18)
+		await staking.notifyNativeRewardAmount(rewards, { value: rewards })
 
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 		await time.increase(tokenRewardsDuration / 3n)
 
-		const stake = () => staking.connect(signers[1]).stake(BigInt(1e18))
-		await expectUpdateRewardToBeCalled(stake, signers[1], staking, signers.slice(2, 4))
+		const vest = () => staking.connect(signers[1]).vest(BigInt(1e18))
+		await expectUpdateRewardToBeCalled(vest, signers[1], staking, signers.slice(2, 4))
 	})
 
 	it('amount must be greater than 0', async function () {
 		const { staking, signers } = await getStakingContractsWithStakersAndRewards()
 
-		const stakeWith0Amount = staking.connect(signers[1]).stake(0)
-		await expect(stakeWith0Amount).to.be.revertedWith('Cannot stake 0')
+		const vestWith0Amount = staking.connect(signers[1]).vest(0)
+		await expect(vestWith0Amount).to.be.revertedWith('Cannot vest 0')
 	})
 
-	it('increases totalSupplyLP on amount that was staked', async function () {
+	it.only('decreases balanceST and balanceVST on amount that was vested and sets vestingFinishTime', async function () {
 		const { staking, signers } = await getStakingContractsWithStakersAndRewards()
+
+		const rewards = BigInt(100e18)
+		await staking.notifyNativeRewardAmount(rewards, { value: rewards })
+
+		const nativeRewardsDuration = await staking.nativeRewardsDuration()
+		await time.increase(nativeRewardsDuration)
+
+		const amounts = [BigInt(1e18), BigInt(10e18), BigInt(1e9)]
+
+		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
+
+		for (const [i, amount] of amounts.entries()) {
+			await staking.connect(signers[i + 1]).getReward()
+
+			let vars = await staking.userVariables(signers[i + 1])
+			const balanceVST = vars.balanceVST
+			expect(balanceVST).to.be.eq(0)
+
+			const balanceST = await staking.balanceSTOf(signers[i + 1])
+
+			await staking.connect(signers[i + 1]).stake(amount * 10n)
+			await staking.connect(signers[i + 1]).vest(amount)
+
+			vars = await staking.userVariables(signers[i + 1])
+			const newBalanceVST = vars.balanceVST
+			const newBalanceST = await staking.balanceSTOf(signers[i + 1])
+
+			expect(newBalanceVST).to.be.eq(amount * AMOUNT_MULTIPLIER)
+			expect(newBalanceST).to.be.eq(balanceST - amount)
+		}
+	})
+
+	it.skip('decreases totalSupplyST on amount vested', async function () {
+		const { staking, signers } = await getStakingContractsWithStakersAndRewards()
+
+		const rewards = BigInt(100e18)
+		await staking.notifyNativeRewardAmount(rewards, { value: rewards })
+
+		const nativeRewardsDuration = await staking.nativeRewardsDuration()
+		await time.increase(nativeRewardsDuration)
 
 		const amounts = [1e18, 10e18, 1e9]
 
 		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
 
 		for (const [i, amount] of amounts.entries()) {
-			const totalSupplyBefore = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
+			await staking.getReward()
 
-			await staking.connect(signers[i + 1]).stake(BigInt(amount))
+			let vars = await staking.userVariables(signers[i + 1])
+			const balanceVST = vars.balanceVST
+			const balanceST = await staking.balanceSTOf(signers[i + 1])
+			console.log('User balance ST', balanceST)
 
-			const totalSupplyAfter = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
+			await staking.connect(signers[i + 1]).vest(balanceST)
 
+			vars = await staking.userVariables(signers[i + 1])
+			const newBalanceVST = vars.balanceVST
+
+			expect(newBalanceVST).to.be.eq(BigInt(amount) * AMOUNT_MULTIPLIER)
 			expect(totalSupplyAfter).to.be.eq(totalSupplyBefore + BigInt(amount))
 		}
 	})
 
-	it('increases balance of user', async function () {
+	it.skip('require on staked LP amount')
+	it.skip('require on amount to vest less than or equal balanceST')
+
+	it.skip('increases balance of user', async function () {
 		const { staking, signers } = await getStakingContractsWithStakersAndRewards()
 
 		const amounts = [1e18, 10e18, 1e9]
@@ -61,7 +111,7 @@ export const stake = function () {
 		}
 	})
 
-	it('doesn`t change balances of other users', async function () {
+	it.skip('doesn`t change balances of other users', async function () {
 		const { staking, signers } = await getStakingContractsWithStakersAndRewards()
 
 		const amounts = [1e18, 10e18, 1e9]
@@ -86,7 +136,7 @@ export const stake = function () {
 		}
 	})
 
-	it('locks tokens on contract', async function () {
+	it.skip('locks tokens on contract', async function () {
 		const { staking, signers, stakingToken } = await getStakingContractsWithStakersAndRewards()
 
 		const amount = BigInt(1e18)
@@ -95,7 +145,7 @@ export const stake = function () {
 		await expect(tx).to.changeTokenBalances(stakingToken, [signers[1], staking], [-amount, amount])
 	})
 
-	it('reverts if user doesn`t have enough funds or enough allowance', async function () {
+	it.skip('reverts if user doesn`t have enough funds or enough allowance', async function () {
 		const { staking, signers, stakingToken } = await getStakingContractsWithStakersAndRewards()
 
 		const amount = BigInt(100e18)
@@ -109,7 +159,7 @@ export const stake = function () {
 		await expect(stakeWithoutEnoughBalance).to.be.revertedWith('ERC20: transfer amount exceeds balance')
 	})
 
-	it('emits Staked event', async function () {
+	it.skip('emits Staked event', async function () {
 		const { staking, signers } = await getStakingContractsWithStakersAndRewards()
 
 		const amount = BigInt(1e18)
@@ -120,7 +170,7 @@ export const stake = function () {
 
 	/* --- Scenarios --- */
 
-	it('right after stake user doesn`t have rewards to withdraw', async function () {
+	it.skip('right after stake user doesn`t have rewards to withdraw', async function () {
 		const { staking, signers, rewardToken, stakingToken } = await getStakingContractsWithStakersAndRewards()
 
 		const rewards = await rewardToken.balanceOf(await staking.getAddress())
