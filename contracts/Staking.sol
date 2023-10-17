@@ -182,6 +182,7 @@ contract Staking is Ownable, ReentrancyGuard {
 		}
 	}
 
+	/// @notice if user call this function, his vesting period going to reset 
 	function vest(uint amount) public nonReentrant updateReward(msg.sender) {
 		amount *= AMOUNT_MULTIPLIER;
 
@@ -210,9 +211,8 @@ contract Staking is Ownable, ReentrancyGuard {
 
 	function compoundBP() external updateReward(msg.sender) {}
 
+	/// @dev should be static call, b/c pool didnt change after this change (just don't spend gas if you can)
 	function getUserData() external updateReward(msg.sender) returns (uint256, uint256, uint256, uint256, uint256) {
-		/// @dev should be static call, b/c pool didnt change after this change (just don't spend gas if you can)
-
 		UserVariables memory userCurrentVariables = userVariables[msg.sender];
 
 		return (
