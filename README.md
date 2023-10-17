@@ -7,7 +7,7 @@ Rewards distributor must set rewards to stakers. They should use ```notifyToken(
 Users should stake LP tokens, to participate in rewards distribution. 
 Users can vest some received esXFI tokens to get exact amount of XFI later.
 
-Check ./xfi_staking_explanation.pdf to see more detailed information.
+Check [explanation](https://github.com/0xLumos-Labs/staking-xfi-hh/blob/master/xfi_staking_explanation.pdf) to see more detailed information.
 
 ```solidity
 // SPDX-License-Identifier: UNLICENSED
