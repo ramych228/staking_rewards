@@ -210,7 +210,7 @@ contract Staking is Ownable, ReentrancyGuard {
 
 	function compoundBP() external updateReward(msg.sender) {}
 
-	/// @dev should be static call, b/c pool didnt change after this change (just don't spend gas if you can)
+	/// @notice returns data about user rewards for front-end, supposed to be called via staticCall
 	function getUserData() external updateReward(msg.sender) returns (uint256, uint256, uint256, uint256, uint256) {
 		UserVariables memory userCurrentVariables = userVariables[msg.sender];
 
