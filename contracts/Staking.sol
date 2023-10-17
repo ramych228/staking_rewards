@@ -33,11 +33,14 @@ contract Staking is Ownable, ReentrancyGuard {
 	uint256 public tokenPeriodFinish; // finish of tokens earning
 	uint256 public tokenRewardRate = 0; // how many tokens are given to pool every second
 	uint256 public tokenRewardsDuration = 60 days;
-	uint256 public lastUpdateTime = type(uint256).max; // last update of everything stored (check updateReward modifier)
+	// uint256 public lastUpdateTime = type(uint256).max; // last update of everything stored (check updateReward modifier)
 
 	uint256 public nativePeriodFinish = 0;
 	uint256 public nativeRewardRate = 0;
 	uint256 public nativeRewardsDuration = 50;
+
+	uint256 public lastNativeUpdateTime;
+	uint256 public lastTokenUpdateTime;
 
 	struct UserVariables {
 		uint256 userTokenMultiplierPaid;
@@ -86,16 +89,16 @@ contract Staking is Ownable, ReentrancyGuard {
 	// =====================USEFUL VIEWS==============================
 
 	function lastTimeTokenRewardApplicable() public view returns (uint256) {
-		return tokenPeriodFinish == 0 ? block.timestamp : Math.min(block.timestamp, tokenPeriodFinish);
+		return Math.min(block.timestamp, tokenPeriodFinish);
 	}
 
 	function lastTimeNativeRewardApplicable() public view returns (uint256) {
-		return nativePeriodFinish == 0 ? block.timestamp : Math.min(block.timestamp, nativePeriodFinish);
+		return Math.min(block.timestamp, nativePeriodFinish);
 	}
 
-	function lastTimeRewardApplicable() public view returns (uint256) {
-		return Math.min(block.timestamp, Math.max(lastTimeTokenRewardApplicable(), lastTimeNativeRewardApplicable()));
-	}
+	// function lastTimeRewardApplicable() public view returns (uint256) {
+	// 	return Math.min(block.timestamp, Math.max(lastTimeTokenRewardApplicable(), lastTimeNativeRewardApplicable()));
+	// }
 
 	function getBalanceMultiplier() public view returns (uint256) {
 		if (totalSupplyLP + totalSupplyST + totalSupplyBP == 0) {
@@ -111,9 +114,7 @@ contract Staking is Ownable, ReentrancyGuard {
 
 		return
 			balanceMultiplierStored +
-			((nativeRewardRate) *
-				(lastTimeNativeRewardApplicable() - Math.min(lastTimeNativeRewardApplicable(), lastUpdateTime)) *
-				balanceMultiplierStored) /
+			((nativeRewardRate) * (lastTimeNativeRewardApplicable() - lastNativeUpdateTime) * balanceMultiplierStored) /
 			(totalSupplyBP + totalSupplyLP + totalSupplyST);
 	}
 
@@ -133,9 +134,7 @@ contract Staking is Ownable, ReentrancyGuard {
 
 		return
 			nativeMultiplierStored +
-			(nativeMultiplierStored *
-				(lastTimeNativeRewardApplicable() - Math.min(lastTimeNativeRewardApplicable(), lastUpdateTime)) *
-				nativeRewardRate) /
+			(nativeMultiplierStored * (lastTimeNativeRewardApplicable() - lastNativeUpdateTime) * nativeRewardRate) /
 			(totalSupplyLP + totalSupplyBP + totalSupplyST);
 	}
 
@@ -154,12 +153,12 @@ contract Staking is Ownable, ReentrancyGuard {
 
 		return
 			tokenMultiplierStored +
-			(((lastTimeTokenRewardApplicable() - Math.min(lastTimeTokenRewardApplicable(), lastUpdateTime)) *
-				balanceMultiplierStored) * tokenRewardRate) /
+			((lastTimeTokenRewardApplicable() - lastTokenUpdateTime) * balanceMultiplierStored * tokenRewardRate) /
 			(totalSupplyBP + totalSupplyLP + totalSupplyST);
 	}
 
 	function tokenEarned(address account) internal view returns (uint256) {
+		UserVariables memory userPreviousVariables = userVariables[account];
 		// console.log("\n", "<-------earned------->");
 		// console.log("balanceLP[acc]: ", userVariables[account].balanceLP);
 		// console.log("userBP[acc]: ", userVariables[account].balanceBP);
@@ -167,16 +166,17 @@ contract Staking is Ownable, ReentrancyGuard {
 		// console.log("(getTokenMultiplier() - userVariables[account].userTokenMultiplierPaid):", (getTokenMultiplier() - userVariables[account].userTokenMultiplierPaid));
 		// console.log("<------end-earned------->");
 		return
-			((userVariables[account].balanceLP + userVariables[account].balanceST + userVariables[account].balanceBP) *
-				(getTokenMultiplier() - userVariables[account].userTokenMultiplierPaid)) /
-			Math.max(userVariables[account].balanceMultiplierPaid, INIT_MULTIPLIER_VALUE);
+			((userPreviousVariables.balanceLP + userPreviousVariables.balanceST + userPreviousVariables.balanceBP) *
+				(getTokenMultiplier() - userPreviousVariables.userTokenMultiplierPaid)) /
+			Math.max(userPreviousVariables.balanceMultiplierPaid, INIT_MULTIPLIER_VALUE);
 	}
 
 	function nativeEarned(address account) internal view returns (uint256) {
+		UserVariables memory userPreviousVariables = userVariables[account];
 		return
-			((userVariables[account].balanceLP + userVariables[account].balanceST + userVariables[account].balanceBP) *
+			((userPreviousVariables.balanceLP + userPreviousVariables.balanceST + userPreviousVariables.balanceBP) *
 				getNativeMultiplier()) /
-			Math.max(userVariables[account].userNativeMultiplierPaid, INIT_MULTIPLIER_VALUE);
+			Math.max(userPreviousVariables.userNativeMultiplierPaid, INIT_MULTIPLIER_VALUE);
 	}
 
 	/* ========== MUTATIVE FUNCTIONS ========== */
@@ -194,9 +194,11 @@ contract Staking is Ownable, ReentrancyGuard {
 	}
 
 	function getNativeReward() public nonReentrant updateReward(msg.sender) {
-		uint256 reward = userVariables[msg.sender].balanceNC;
+		UserVariables memory userPreviousVariables = userVariables[msg.sender];
+
+		uint256 reward = userPreviousVariables.balanceNC;
 		if (reward > 0) {
-			userVariables[msg.sender].balanceNC = 0;
+			userPreviousVariables.balanceNC = 0;
 
 			(bool sent, ) = msg.sender.call{value: reward / AMOUNT_MULTIPLIER}('');
 
@@ -204,6 +206,8 @@ contract Staking is Ownable, ReentrancyGuard {
 
 			emit TokenRewardPaid(msg.sender, reward / AMOUNT_MULTIPLIER);
 		}
+
+		userVariables[msg.sender] = userPreviousVariables;
 	}
 
 	function withdraw(uint256 amount) public nonReentrant updateReward(msg.sender) {
@@ -279,7 +283,7 @@ contract Staking is Ownable, ReentrancyGuard {
 		uint balance = rewardsToken.balanceOf(address(this));
 		require(tokenRewardRate <= (balance * AMOUNT_MULTIPLIER) / tokenRewardsDuration, 'Provided reward too high');
 
-		lastUpdateTime = block.timestamp;
+		lastTokenUpdateTime = block.timestamp;
 
 		tokenPeriodFinish = block.timestamp + tokenRewardsDuration;
 		emit TokenRewardAdded(reward);
@@ -297,7 +301,7 @@ contract Staking is Ownable, ReentrancyGuard {
 		uint balance = address(this).balance;
 		require(nativeRewardRate <= (balance * AMOUNT_MULTIPLIER) / nativeRewardsDuration, 'Provided reward too high');
 
-		lastUpdateTime = block.timestamp;
+		lastNativeUpdateTime = block.timestamp;
 		nativePeriodFinish = block.timestamp + nativeRewardsDuration;
 		emit NativeRewardAdded(amount);
 	}
@@ -310,10 +314,12 @@ contract Staking is Ownable, ReentrancyGuard {
 		// console.log('time: ', lastTimeRewardApplicable(), lastUpdateTime);
 
 		totalSupplyST +=
-			(lastTimeNativeRewardApplicable() - Math.min(lastTimeNativeRewardApplicable(), lastUpdateTime)) *
+			(lastTimeNativeRewardApplicable() - Math.min(lastTimeNativeRewardApplicable(), lastNativeUpdateTime)) *
+
 			nativeRewardRate;
 
-		lastUpdateTime = lastTimeRewardApplicable();
+		lastNativeUpdateTime = lastTimeNativeRewardApplicable();
+		lastTokenUpdateTime = lastTimeTokenRewardApplicable();
 
 		if (account != address(0)) {
 			userPreviousVariables = updateUserVariables(account, userPreviousVariables);
@@ -321,7 +327,8 @@ contract Staking is Ownable, ReentrancyGuard {
 			userPreviousVariables = updateBonusPoints(account, userPreviousVariables);
 			userPreviousVariables = updateVesting(account, userPreviousVariables);
 
-			userPreviousVariables.userLastUpdateTime = lastUpdateTime;
+			userPreviousVariables.userLastUpdateTime = block.timestamp;
+
 			userPreviousVariables.balanceMultiplierPaid = balanceMultiplierStored;
 		}
 
@@ -369,9 +376,10 @@ contract Staking is Ownable, ReentrancyGuard {
 		address account,
 		UserVariables memory userPreviousVariables
 	) internal returns (UserVariables memory) {
-		uint256 increaseOfBP = ((lastTimeRewardApplicable() -
-			Math.min(userVariables[account].userLastUpdateTime, lastUpdateTime)) * userPreviousVariables.balanceLP) /
-			ONE_YEAR_IN_SECS;
+		if (userVariables[account].userLastUpdateTime == 0) return userPreviousVariables;
+
+		uint256 increaseOfBP = ((block.timestamp - userVariables[account].userLastUpdateTime) *
+			userPreviousVariables.balanceLP) / ONE_YEAR_IN_SECS;
 
 		totalSupplyBP += increaseOfBP;
 		userPreviousVariables.balanceBP += increaseOfBP;
