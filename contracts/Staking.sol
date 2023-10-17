@@ -45,6 +45,7 @@ contract Staking is Ownable, ReentrancyGuard {
 		uint256 balanceBP;
 		uint256 balanceNC;
 		uint256 balanceVST;
+		uint256 balanceVSTStored;
 		uint256 rewards;
 		uint256 vestingFinishTime;
 	}
@@ -196,7 +197,9 @@ contract Staking is Ownable, ReentrancyGuard {
 		userPreviousVariables.balanceST -= amount;
 		totalSupplyST -= amount;
 
+		userPreviousVariables.balanceVST -= userPreviousVariables.balanceVSTStored;
 		userPreviousVariables.balanceVST += amount;
+
 
 		userPreviousVariables.vestingFinishTime = block.timestamp + ONE_YEAR_IN_SECS;
 
@@ -339,8 +342,8 @@ contract Staking is Ownable, ReentrancyGuard {
 			Math.min(userVariables[account].balanceVST, userPreviousVariables.balanceLP / VESTING_CONST)) /
 			ONE_YEAR_IN_SECS;
 
-		userPreviousVariables.balanceVST -= increaseOfNC;
 		userPreviousVariables.balanceNC += increaseOfNC;
+		userPreviousVariables.balanceVSTStored += increaseOfNC;
 
 		return userPreviousVariables;
 	}
