@@ -182,7 +182,7 @@ contract Staking is Ownable, ReentrancyGuard {
 		}
 	}
 
-	/// @notice if user call this function, his vesting period going to reset 
+	/// @notice if user call this function, his vesting period going to reset
 	function vest(uint amount) public nonReentrant updateReward(msg.sender) {
 		amount *= AMOUNT_MULTIPLIER;
 
@@ -201,12 +201,11 @@ contract Staking is Ownable, ReentrancyGuard {
 		userPreviousVariables.balanceVST -= userPreviousVariables.balanceVSTStored;
 		userPreviousVariables.balanceVST += amount;
 
-
 		userPreviousVariables.vestingFinishTime = block.timestamp + ONE_YEAR_IN_SECS;
 
 		userVariables[msg.sender] = userPreviousVariables;
 
-		emit Vesting(msg.sender, amount);
+		emit Vesting(msg.sender, amount / AMOUNT_MULTIPLIER);
 	}
 
 	function compoundBP() external updateReward(msg.sender) {}

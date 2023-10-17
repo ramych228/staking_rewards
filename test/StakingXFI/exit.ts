@@ -8,7 +8,6 @@ export const exit = function () {
 
 	// There is a question about reentering actually
 	// looks kinda sus
-	it.skip('non-reentrant')
 
 	it('calls updateReward() with msg.sender as a parameter', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()

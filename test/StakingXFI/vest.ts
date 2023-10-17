@@ -7,8 +7,6 @@ import { expectToBeRevertedWith } from './_utils'
 export const vest = function () {
 	/* --- Units --- */
 
-	it.skip('non-reentrant')
-
 	it('calls updateReward() with msg.sender as a parameter', async function () {
 		const { staking, signers } = await getStakingContractsWithStakersAndRewards()
 		const rewards = BigInt(100e18)

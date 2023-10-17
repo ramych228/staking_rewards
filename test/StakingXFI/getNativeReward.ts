@@ -9,8 +9,6 @@ export const getNativeReward = function () {
 	/* --- Units --- */
 	const yearInSeconds = 365 * 24 * 60 * 60
 
-	it.skip('non-reentrant')
-
 	it('calls updateReward() with msg.sender as a parameter', async function () {
 		const { staking, signers } = await getStakingContractsWithStakersAndRewards()
 		const rewards = BigInt(100e18)
@@ -52,7 +50,7 @@ export const getNativeReward = function () {
 		await expect(getNativeReward).to.changeEtherBalances([signers[1], staking], [amount, -amount])
 	})
 
-	it.only('sends native rewards according to unlock rate through the year', async function () {
+	it('sends native rewards according to unlock rate through the year', async function () {
 		hardhat.tracer.enabled = false
 		const { staking, signers } = await getStakingContractsWithStakersAndRewards()
 		hardhat.tracer.enabled = true
@@ -70,13 +68,10 @@ export const getNativeReward = function () {
 		const iterations = 6n
 
 		for (let i = 1n; i <= iterations; i++) {
-			console.log(i)
-
 			const start = await time.latest()
 			await time.increase(BigInt(yearInSeconds) / iterations - 1n)
 			const end = await time.latest()
 
-			console.log('Time', end - start)
 			const getNativeReward = staking.connect(signers[1]).getNativeReward()
 			await expect(getNativeReward).to.changeEtherBalances(
 				[signers[1], staking],

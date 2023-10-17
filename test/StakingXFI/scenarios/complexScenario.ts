@@ -32,9 +32,6 @@ export const complexScenario = async function () {
 		let staker2Shares1Period = await staking.balanceLPOf(signers[2].address)
 		let staker3Shares1Period = await staking.balanceLPOf(signers[3].address)
 
-		console.log(staker1Shares1Period)
-		console.log(totalShares1Period)
-
 		await time.increase(tokenRewardsDuration / 3n)
 
 		/* --- 1/3 period - check reward --- */
@@ -249,9 +246,6 @@ export const complexScenario = async function () {
 
 		const reward1 = await staking.balanceSTOf(signers[1].address)
 		const reward2 = await staking.balanceSTOf(signers[2].address)
-
-		console.log(reward1)
-		console.log(reward2)
 	})
 
 	it('Complex scenario on Native Reward', async function () {
@@ -405,9 +399,6 @@ export const complexScenario = async function () {
 			let staker1Shares1Period = await staking.balanceLPOf(signers[1].address)
 			let staker2Shares1Period = await staking.balanceLPOf(signers[2].address)
 			let staker3Shares1Period = await staking.balanceLPOf(signers[3].address)
-
-			console.log(staker1Shares1Period)
-			console.log(totalShares1Period)
 
 			await time.increase(nativeRewardsDuration / 3n)
 

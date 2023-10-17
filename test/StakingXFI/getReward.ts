@@ -8,8 +8,6 @@ import { expectUpdateRewardToBeCalled } from './updateReward'
 export const getReward = function () {
 	/* --- Units --- */
 
-	it.skip('non-reentrant')
-
 	it('calls updateReward() modifier with msg.sender as argument', async function () {
 		const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 

@@ -80,7 +80,6 @@ export const notifyTokenRewardAmount = function () {
 
 			// 25e18 (half) is not distributed from initialized 50e18
 			const leftovers = (tokenPeriodFinish - BigInt(latest)) * oldRewardRate
-			console.log(leftovers)
 
 			await staking.notifyTokenRewardAmount(rewards / 2n)
 

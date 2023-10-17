@@ -178,8 +178,4 @@ export const bonusPoints = function () {
 		// 5 seconds elapsed additionally to tokenRewardsDuration
 		expect(earnedBonusPoints).to.be.eq(0)
 	})
-
-	it.skip('bonus points are increasing part of user rewards')
-
-	/* --- Scenarios --- */
 }

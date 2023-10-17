@@ -6,8 +6,6 @@ import { expectUpdateRewardToBeCalled } from './updateReward'
 export const withdraw = function () {
 	/* --- Units --- */
 
-	it.skip('non-reentrant')
-
 	it('calls updateReward() with msg.sender as a parameter', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
 		const rewards = await rewardToken.balanceOf(await staking.getAddress())

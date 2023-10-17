@@ -6,8 +6,6 @@ import { expect } from 'chai'
 export const stake = function () {
 	/* --- Units --- */
 
-	it.skip('non-reentrant')
-
 	it('calls updateReward() with msg.sender as a parameter', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
 		const rewards = await rewardToken.balanceOf(await staking.getAddress())
