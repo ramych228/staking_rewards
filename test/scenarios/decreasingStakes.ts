@@ -71,9 +71,6 @@ export const decreasingStakes = async function () {
 	const reward2 = await staking.connect(signers[2]).tokenEarned(signers[2].address)
 	const reward3 = await staking.connect(signers[3]).tokenEarned(signers[3].address)
 
-	100000003339015747843
-	console.log(reward1 + reward2 + reward3)
-
 	await staking.connect(signers[1]).getReward()
 	await staking.connect(signers[2]).getReward()
 	await staking.connect(signers[3]).getReward()

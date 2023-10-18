@@ -43,7 +43,6 @@ export const notifyAndStakerStake = function () {
 
 			await time.increaseTo((await staking.tokenPeriodFinish()) + 1n)
 
-			console.log(tokenDuration)
 			const tokenChange = tokenRewardAmount - tokenRewardAmount / tokenDuration
 			await staking.connect(staker).getReward()
 			expect((await rewardToken.balanceOf(staker)) - stakerInitRewardBalance).to.approximately(tokenChange, 1000n)
