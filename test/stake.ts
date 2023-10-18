@@ -30,14 +30,12 @@ export const stake = function () {
 
 		const amounts = [1e18, 10e18, 1e9]
 
-		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
-
 		for (const [i, amount] of amounts.entries()) {
-			const totalSupplyBefore = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
+			const totalSupplyBefore = await staking.totalSupplyLP()
 
 			await staking.connect(signers[i + 1]).stake(BigInt(amount))
 
-			const totalSupplyAfter = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
+			const totalSupplyAfter = await staking.totalSupplyLP()
 
 			expect(totalSupplyAfter).to.be.eq(totalSupplyBefore + BigInt(amount))
 		}

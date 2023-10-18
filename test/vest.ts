@@ -94,7 +94,7 @@ export const vest = function () {
 			expect(balanceVST).to.be.eq(0)
 
 			const balanceST = await staking.balanceSTOf(signers[i + 1])
-			const oldTotalSupplyST = (await staking.totalSupplyST()) / AMOUNT_MULTIPLIER
+			const oldTotalSupplyST = await staking.totalSupplyST()
 
 			await staking.connect(signers[i + 1]).stake(amount * 10n)
 			const tx = staking.connect(signers[i + 1]).vest(amount)
@@ -105,7 +105,7 @@ export const vest = function () {
 			vars = await staking.userVariables(signers[i + 1])
 			const newBalanceVST = vars.balanceVST
 			const newBalanceST = await staking.balanceSTOf(signers[i + 1])
-			const newTotalSupplyST = (await staking.totalSupplyST()) / AMOUNT_MULTIPLIER
+			const newTotalSupplyST = await staking.totalSupplyST()
 
 			expect(newBalanceVST).to.be.eq(amount * AMOUNT_MULTIPLIER)
 			expect(newBalanceST).to.be.eq(balanceST - amount)

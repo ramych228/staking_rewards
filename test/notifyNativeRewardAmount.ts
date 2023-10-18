@@ -47,12 +47,12 @@ export const notifyNativeRewardAmount = function () {
 				await staking.connect(staker).getReward()
 			}
 
-			const leftovers = rewards - (await staking.totalSupplyST()) / AMOUNT_MULTIPLIER
+			const leftovers = rewards - (await staking.totalSupplyST())
 
 			let nativeRewardRate = await staking.nativeRewardRate()
 
 			// totalSupplyST is nativeRewardRate more than initialized rewards
-			const totalSupplyST = (await staking.totalSupplyST()) / AMOUNT_MULTIPLIER
+			const totalSupplyST = await staking.totalSupplyST()
 			const calculationError = BigInt(1e7)
 
 			expect(totalSupplyST).to.be.within(rewards - calculationError, rewards)

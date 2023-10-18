@@ -115,7 +115,6 @@ export const fixtures = function () {
 
 	it('getStakingContractWithStakersAndRewards', async function () {
 		const { rewardToken, staking, stakingToken, signers, owner } = await getStakingContractsWithStakersAndRewards()
-		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
 
 		expect(owner.address).to.be.eq(signers[0].address)
 		const totalSupply = await stakingToken.totalSupply()
@@ -132,7 +131,7 @@ export const fixtures = function () {
 		expect(await stakingToken.balanceOf(signers[2].address)).to.be.eq(ethers.parseEther('998'))
 		expect(await stakingToken.balanceOf(signers[3].address)).to.be.eq(ethers.parseEther('997'))
 
-		const stakedTotalSupply = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
+		const stakedTotalSupply = await staking.totalSupplyLP()
 		expect(stakedTotalSupply).to.be.eq(ethers.parseEther('6'))
 	})
 }

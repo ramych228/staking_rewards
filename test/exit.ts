@@ -25,17 +25,16 @@ export const exit = function () {
 	it('calls withdraw()', async function () {
 		const { staking, signers, stakingToken } = await getStakingContractsWithStakersAndRewards()
 
-		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
 		for (const signer of signers.slice(1, 4)) {
 			const userBalance = await staking.balanceLPOf(signer.address)
-			const totalSupplyBefore = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
+			const totalSupplyBefore = await staking.totalSupplyLP()
 
 			const exit = staking.connect(signer).exit()
 
 			await expect(exit).to.changeTokenBalances(stakingToken, [signer, staking], [userBalance, -userBalance])
 			await expect(exit).to.emit(staking, 'Withdrawn').withArgs(signer.address, userBalance)
 
-			const totalSupplyAfter = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
+			const totalSupplyAfter = await staking.totalSupplyLP()
 
 			expect(totalSupplyAfter).to.be.eq(
 				totalSupplyBefore - userBalance,
@@ -45,7 +44,7 @@ export const exit = function () {
 	})
 
 	it('calls getReward()', async function () {
-		const { signers, staking, stakingToken, rewardToken } = await getStakingContractsWithStakersAndRewards()
+		const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 		/* --- Setup rewards --- */
 		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
@@ -55,9 +54,6 @@ export const exit = function () {
 		await time.increase(tokenRewardsDuration)
 
 		/* --- Function call --- */
-		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
-		const userShares = await staking.balanceLPOf(signers[1].address)
-		const totalShares = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
 
 		const oldBalanceOfStaking = await rewardToken.balanceOf(await staking.getAddress())
 
