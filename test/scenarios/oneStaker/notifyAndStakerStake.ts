@@ -88,9 +88,6 @@ export const notifyAndStakerStake = function () {
 		})
 
 		it('notify Native reward and stake right after it', async function () {
-			console.log('===========================> NEGA WAAAT TEST')
-			console.log('Most likely the problem with RR, the bigger it is -- the more we wasting in accuracy')
-
 			const { signers, staking, nativeDuration } = await getStakingContractWithStakers()
 			const staker = signers[1]
 			const tokenNativeAmount = ethers.parseEther('9999')
@@ -98,14 +95,8 @@ export const notifyAndStakerStake = function () {
 
 			// ------------- ACTION ---------------------
 
-			console.log(await ethers.provider.getBalance(staker.address))
-
 			await staking.notifyNativeRewardAmount(tokenNativeAmount, { value: tokenNativeAmount })
 			await staking.connect(staker).stake(stakeAmount)
-			const totalSupplyST = (await staking.totalSupplyST()) / 10000n
-			1928819444444444
-			console.log('Total supply ST', totalSupplyST)
-			console.log('Balance ST of staker', await staking.balanceSTOf(staker.address))
 
 			await time.increase(nativeDuration)
 
@@ -113,15 +104,10 @@ export const notifyAndStakerStake = function () {
 			await staking.connect(staker).exit()
 			const tokenChange = tokenNativeAmount - tokenNativeAmount / nativeDuration
 
-			console.log('Native reward Rate', nativeRewardRate / 10000n)
-			console.log('Contract balance', await ethers.provider.getBalance(await staking.getAddress()))
-			console.log('Total supply ST', (await staking.totalSupplyST()) / 10000n)
-
 			expect(await staking.balanceSTOf(staker)).to.approximately(tokenChange, nativeRewardRate / 10000n)
 		})
 
 		it('notify Native reward and stake after X secs', async function () {
-			console.log('=======================> Try to change the stakeAmount. Bigger it is -- more staker gain')
 			const { signers, staking, nativeDuration } = await getStakingContractWithStakers()
 			const staker = signers[1]
 			const nativeRewardAmount = ethers.parseEther('4')
