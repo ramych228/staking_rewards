@@ -9,6 +9,7 @@ async function deployStaking() {
 
 	const signers = await ethers.getSigners()
 	const owner = signers[0]
+	const duration = 50n
 
 	const StakingRewards = await ethers.getContractFactory('Staking')
 	const staking = await StakingRewards.deploy(
@@ -17,28 +18,25 @@ async function deployStaking() {
 		await stakingToken.getAddress()
 	)
 
-	const tokenDuration = await staking.tokenRewardsDuration();
-	const nativeDuration = await staking.nativeRewardsDuration();
-
 	return {
 		rewardToken,
 		stakingToken,
 		staking,
 		signers,
 		owner,
-		tokenDuration,
-		nativeDuration,
+		duration,
 	}
 }
 
 async function deployStakingWithStakersAndRewards() {
 	const { rewardToken, stakingToken, staking, signers, owner } = await loadFixture(deployStaking)
 
-	const amount = ethers.parseEther('100000000000000000000000')
+	let amount = ethers.parseEther('100')
 
 	await rewardToken.mint(await staking.getAddress(), amount)
 	await rewardToken.mint(owner.address, amount)
 
+	amount = amount * 10n
 	await stakingToken.mint(signers[1].address, amount)
 	await stakingToken.mint(signers[2].address, amount)
 	await stakingToken.mint(signers[3].address, amount)
@@ -62,11 +60,9 @@ async function deployStakingWithStakersAndRewards() {
 }
 
 async function deployStakingWithStakers() {
-	const { rewardToken, stakingToken, staking, signers, owner, tokenDuration, nativeDuration } = await loadFixture(deployStaking)
-
+	const { rewardToken, stakingToken, staking, signers, owner, duration } = await loadFixture(deployStaking)
 
 	const amount = ethers.parseEther('10000000')
-
 
 	await rewardToken.mint(await staking.getAddress(), amount)
 	await rewardToken.mint(owner.address, amount)
@@ -79,12 +75,16 @@ async function deployStakingWithStakers() {
 	await stakingToken.connect(signers[2]).approve(await staking.getAddress(), amount)
 	await stakingToken.connect(signers[3]).approve(await staking.getAddress(), amount)
 
+	const tokenDuration = await staking.tokenRewardsDuration();
+	const nativeDuration = await staking.nativeRewardsDuration();
+
 	return {
 		rewardToken,
 		stakingToken,
 		staking,
 		owner,
 		signers,
+		duration,
 		tokenDuration,
 		nativeDuration,
 	}
@@ -104,7 +104,7 @@ export async function getStakingContractWithStakers() {
 
 export const fixtures = function () {
 	it('getStakingContract', async function () {
-		const { rewardToken, staking, stakingToken } = await getStakingContracts()
+		const { rewardToken, stakingToken } = await getStakingContracts()
 
 		expect(await rewardToken.name()).to.be.eq('Reward Token')
 		expect(await rewardToken.symbol()).to.be.eq('RWRD')
@@ -118,10 +118,11 @@ export const fixtures = function () {
 
 	it('getStakingContractWithStakersAndRewards', async function () {
 		const { rewardToken, staking, stakingToken, signers, owner } = await getStakingContractsWithStakersAndRewards()
+		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
 
 		expect(owner.address).to.be.eq(signers[0].address)
 		const totalSupply = await stakingToken.totalSupply()
-		expect(totalSupply).to.be.eq(ethers.parseEther('300'))
+		expect(totalSupply).to.be.eq(ethers.parseEther('3000'))
 
 		expect(await staking.balanceLPOf(signers[1].address)).to.be.eq(ethers.parseEther('1'))
 		expect(await staking.balanceLPOf(signers[2].address)).to.be.eq(ethers.parseEther('2'))
@@ -130,11 +131,11 @@ export const fixtures = function () {
 		expect(await stakingToken.balanceOf(await staking.getAddress())).to.be.eq(ethers.parseEther('6'))
 		expect(await rewardToken.balanceOf(await staking.getAddress())).to.be.eq(ethers.parseEther('100'))
 
-		expect(await stakingToken.balanceOf(signers[1].address)).to.be.eq(ethers.parseEther('99'))
-		expect(await stakingToken.balanceOf(signers[2].address)).to.be.eq(ethers.parseEther('98'))
-		expect(await stakingToken.balanceOf(signers[3].address)).to.be.eq(ethers.parseEther('97'))
+		expect(await stakingToken.balanceOf(signers[1].address)).to.be.eq(ethers.parseEther('999'))
+		expect(await stakingToken.balanceOf(signers[2].address)).to.be.eq(ethers.parseEther('998'))
+		expect(await stakingToken.balanceOf(signers[3].address)).to.be.eq(ethers.parseEther('997'))
 
-		const stakedTotalSupply = await staking.totalSupplyLP()
+		const stakedTotalSupply = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
 		expect(stakedTotalSupply).to.be.eq(ethers.parseEther('6'))
 	})
 }
