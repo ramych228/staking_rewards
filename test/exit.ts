@@ -8,10 +8,10 @@ export const exit = function () {
 
 	// There is a question about reentering actually
 	// looks kinda sus
-	it.skip('non-reentrant')
 
 	it('calls updateReward() with msg.sender as a parameter', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
+
 		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewards)
 
@@ -25,16 +25,17 @@ export const exit = function () {
 	it('calls withdraw()', async function () {
 		const { staking, signers, stakingToken } = await getStakingContractsWithStakersAndRewards()
 
+		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
 		for (const signer of signers.slice(1, 4)) {
 			const userBalance = await staking.balanceLPOf(signer.address)
-			const totalSupplyBefore = await staking.totalSupplyLP()
+			const totalSupplyBefore = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
 
 			const exit = staking.connect(signer).exit()
 
 			await expect(exit).to.changeTokenBalances(stakingToken, [signer, staking], [userBalance, -userBalance])
 			await expect(exit).to.emit(staking, 'Withdrawn').withArgs(signer.address, userBalance)
 
-			const totalSupplyAfter = await staking.totalSupplyLP()
+			const totalSupplyAfter = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
 
 			expect(totalSupplyAfter).to.be.eq(
 				totalSupplyBefore - userBalance,
@@ -54,21 +55,29 @@ export const exit = function () {
 		await time.increase(tokenRewardsDuration)
 
 		/* --- Function call --- */
-		const tokenEarned = await staking.tokenEarned(signers[1].address)
-		const exit = staking.connect(signers[1]).getReward()
+		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
+		const userShares = await staking.balanceLPOf(signers[1].address)
+		const totalShares = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
+
+		const oldBalanceOfStaking = await rewardToken.balanceOf(await staking.getAddress())
+
+		await staking.connect(signers[1]).exit()
 
 		/* --- Assert --- */
-		await expect(exit).to.changeTokenBalances(rewardToken, [signers[1], staking], [tokenEarned, -tokenEarned])
-		await expect(exit).to.emit(staking, 'RewardPaid').withArgs(signers[1].address, tokenEarned)
+		const newBalanceOfStaking = await rewardToken.balanceOf(await staking.getAddress())
+		const userBalance = await rewardToken.balanceOf(signers[1])
 
-		const rewardsForUserAfterGetReward = await staking.rewards(signers[1].address)
+		expect(userBalance).to.be.eq(oldBalanceOfStaking - newBalanceOfStaking)
+
+		const vars = await staking.userVariables(signers[1].address)
+		const rewardsForUserAfterGetReward = vars.rewards
 		expect(rewardsForUserAfterGetReward).to.be.eq(0)
 	})
 
 	/* --- Scenarios --- */
 
 	it('reverts on being called without stake', async function () {
-		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
+		const { staking, signers } = await getStakingContractsWithStakersAndRewards()
 
 		const exit = staking.connect(signers[4]).exit()
 

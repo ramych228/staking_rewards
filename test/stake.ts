@@ -1,12 +1,10 @@
 import { time } from '@nomicfoundation/hardhat-toolbox/network-helpers'
-import { getStakingContracts, getStakingContractsWithStakersAndRewards } from './_.fixtures'
+import { getStakingContractsWithStakersAndRewards } from './_.fixtures'
 import { expectUpdateRewardToBeCalled } from './updateReward'
 import { expect } from 'chai'
 
 export const stake = function () {
 	/* --- Units --- */
-
-	it.skip('non-reentrant')
 
 	it('calls updateReward() with msg.sender as a parameter', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
@@ -32,12 +30,14 @@ export const stake = function () {
 
 		const amounts = [1e18, 10e18, 1e9]
 
+		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
+
 		for (const [i, amount] of amounts.entries()) {
-			const totalSupplyBefore = await staking.totalSupplyLP()
+			const totalSupplyBefore = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
 
 			await staking.connect(signers[i + 1]).stake(BigInt(amount))
 
-			const totalSupplyAfter = await staking.totalSupplyLP()
+			const totalSupplyAfter = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
 
 			expect(totalSupplyAfter).to.be.eq(totalSupplyBefore + BigInt(amount))
 		}
@@ -96,7 +96,7 @@ export const stake = function () {
 	it('reverts if user doesn`t have enough funds or enough allowance', async function () {
 		const { staking, signers, stakingToken } = await getStakingContractsWithStakersAndRewards()
 
-		const amount = BigInt(100e18)
+		const amount = BigInt(1000e18)
 		const stakeWithoutEnoughApprove = staking.connect(signers[1]).stake(amount)
 
 		await expect(stakeWithoutEnoughApprove).to.be.revertedWith('ERC20: insufficient allowance')
@@ -127,13 +127,19 @@ export const stake = function () {
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 		await time.increase(tokenRewardsDuration / 3n)
 
-		const amount = BigInt(1e18)
+		const amount = BigInt(90e18)
 
 		await stakingToken.connect(signers[3]).transfer(signers[4].address, amount)
 		await stakingToken.connect(signers[4]).approve(await staking.getAddress(), amount)
 		await staking.connect(signers[4]).stake(amount)
 
-		const tokenEarned = await staking.tokenEarned(signers[4])
-		expect(tokenEarned).to.be.eq(0)
+		// While this tx appeared 1 sec already passed
+		// So for 1 second of staking staker should get less than tokenRewardRate
+		await staking.connect(signers[4]).getReward()
+
+		const rewardRate = await staking.tokenRewardRate()
+		const tokenEarned = await rewardToken.balanceOf(signers[4].address)
+
+		expect(tokenEarned).to.be.lessThan(rewardRate)
 	})
 }

@@ -1,13 +1,12 @@
 import { time } from '@nomicfoundation/hardhat-toolbox/network-helpers'
 import { getStakingContractsWithStakersAndRewards } from './_.fixtures'
 import { ethers } from 'hardhat'
+import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs'
 import { expect } from 'chai'
 import { expectUpdateRewardToBeCalled } from './updateReward'
 
 export const getReward = function () {
 	/* --- Units --- */
-
-	it.skip('non-reentrant')
 
 	it('calls updateReward() modifier with msg.sender as argument', async function () {
 		const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
@@ -41,9 +40,12 @@ export const getReward = function () {
 		await time.increase(tokenRewardsDuration)
 
 		const tx = staking.connect(signers[9]).getReward()
-		await expect(tx).not.to.emit(staking, 'RewardPaid')
+		await expect(tx).not.to.emit(staking, 'TokenRewardPaid')
 
-		expect(await staking.tokenEarned(signers[9].address)).to.be.eq(0)
+		const vars = await staking.userVariables(signers[9].address)
+		const userRewards = vars.rewards
+
+		expect(userRewards).to.be.eq(0)
 		expect(await rewardToken.balanceOf(signers[9].address)).to.be.eq(0)
 	})
 
@@ -74,14 +76,22 @@ export const getReward = function () {
 		await staking.notifyTokenRewardAmount(rewards)
 		await time.increase(tokenRewardsDuration)
 
-		const tokenEarned = await staking.tokenEarned(signers[1].address)
+		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
+		const userShares = await staking.balanceLPOf(signers[1].address)
+		const totalShares = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
+		const userRewards = (rewards * userShares) / totalShares
 
-		const tx = staking.connect(signers[1]).getReward()
+		const oldBalanceOfStaking = await rewardToken.balanceOf(await staking.getAddress())
 
-		await expect(tx).to.changeTokenBalances(rewardToken, [signers[1], staking], [tokenEarned, -tokenEarned])
+		await staking.connect(signers[1]).getReward()
+
+		const newBalanceOfStaking = await rewardToken.balanceOf(await staking.getAddress())
+		const userBalance = await rewardToken.balanceOf(signers[1])
+
+		expect(userBalance).to.be.eq(oldBalanceOfStaking - newBalanceOfStaking)
 	})
 
-	it('emits event RewardPaid', async function () {
+	it('emits event TokenRewardPaid', async function () {
 		const { staking, rewardToken, signers } = await getStakingContractsWithStakersAndRewards()
 
 		const rewards = await rewardToken.balanceOf(await staking.getAddress())
@@ -90,10 +100,8 @@ export const getReward = function () {
 		await staking.notifyTokenRewardAmount(rewards)
 		await time.increase(tokenRewardsDuration)
 
-		const tokenEarned = await staking.tokenEarned(signers[1].address)
-
 		const tx = staking.connect(signers[1]).getReward()
-		await expect(tx).to.emit(staking, 'RewardPaid').withArgs(signers[1].address, tokenEarned)
+		await expect(tx).to.emit(staking, 'TokenRewardPaid').withArgs(signers[1].address, anyValue)
 	})
 
 	/* --- Scenarios --- */

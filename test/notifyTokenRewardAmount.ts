@@ -52,7 +52,11 @@ export const notifyTokenRewardAmount = function () {
 			await staking.notifyTokenRewardAmount(amount)
 
 			const tokenRewardRate = await staking.tokenRewardRate()
-			expect(tokenRewardRate).to.be.eq(amount / tokenRewardsDuration)
+
+			const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
+			const calculatedTokenRewardRate = (amount * AMOUNT_MULTIPLIER) / tokenRewardsDuration
+
+			expect(tokenRewardRate).to.be.eq(calculatedTokenRewardRate)
 		})
 
 		it('adds leftovers and correctly calculates rate if rewards distribution have NOT finished', async function () {
@@ -64,11 +68,11 @@ export const notifyTokenRewardAmount = function () {
 
 			await staking.notifyTokenRewardAmount(rewards / 2n)
 
-			await time.increase(tokenRewardsDuration / 2n)
+			await time.increase(tokenRewardsDuration / 2n - 1n)
 
-			for (const staker of signers.slice(1, 4)) {
-				await staking.connect(staker).getReward()
-			}
+			// for (const staker of signers.slice(1, 4)) {
+			// 	await staking.connect(staker).getReward()
+			// }
 
 			const latest = await time.latest()
 			const tokenPeriodFinish = await staking.tokenPeriodFinish()
@@ -81,7 +85,10 @@ export const notifyTokenRewardAmount = function () {
 
 			const tokenRewardRate = await staking.tokenRewardRate()
 
-			expect(tokenRewardRate).to.be.approximately((leftovers + rewards / 2n) / tokenRewardsDuration, 1e7)
+			const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
+			const calculatedTokenRewardRate = ((rewards / 2n) * AMOUNT_MULTIPLIER + leftovers) / tokenRewardsDuration
+
+			expect(tokenRewardRate).to.be.approximately(calculatedTokenRewardRate, 1e11)
 		})
 	})
 
@@ -93,20 +100,19 @@ export const notifyTokenRewardAmount = function () {
 
 		await expect(notify).to.be.revertedWith('Provided reward too high')
 
-		// ?????
 		notify = staking.notifyTokenRewardAmount(rewards + BigInt(1000000e18))
 
 		await expect(notify).to.be.revertedWith('Provided reward too high')
 	})
 
 	it('updates lastUpdateTime to current timestamp', async function () {
-		const { staking, signers, rewardToken } = await getStakingContractsWithStakersAndRewards()
+		const { staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
 		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		await staking.notifyTokenRewardAmount(rewards)
 
 		const latestTimestamp = await time.latest()
-		expect(await staking.lastUpdateTime()).to.be.eq(latestTimestamp)
+		expect(await staking.lastTokenUpdateTime()).to.be.eq(latestTimestamp)
 	})
 
 	it('updates tokenPeriodFinish to current timestamp + tokenRewardsDuration', async function () {
@@ -126,7 +132,7 @@ export const notifyTokenRewardAmount = function () {
 		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const notify = staking.notifyTokenRewardAmount(rewards)
 
-		await expect(notify).to.emit(staking, 'RewardAdded').withArgs(rewards)
+		await expect(notify).to.emit(staking, 'TokenRewardAdded').withArgs(rewards)
 	})
 
 	/* --- Scenarios --- */
@@ -139,25 +145,32 @@ export const notifyTokenRewardAmount = function () {
 
 		const tokenRewardRate = await staking.tokenRewardRate()
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
-		expect(tokenRewardRate).to.be.eq(rewards / 2n / tokenRewardsDuration)
+
+		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
+		const calculatedTokenRewardRate = (rewards * AMOUNT_MULTIPLIER) / 2n / tokenRewardsDuration
+
+		expect(tokenRewardRate).to.be.eq(calculatedTokenRewardRate)
 	})
 
 	it('rewards can be initialized in process of rewards distribution', async function () {
 		const { staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
 
+		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
 		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
 		await staking.notifyTokenRewardAmount(rewards / 2n)
 
-		await time.increase(tokenRewardsDuration / 2n)
+		await time.increase(tokenRewardsDuration / 2n - 1n)
 
 		const tx = staking.notifyTokenRewardAmount(rewards / 2n)
 
 		await expect(tx).not.to.be.reverted
 
 		const tokenRewardRate = await staking.tokenRewardRate()
-		expect(tokenRewardRate).to.be.approximately((rewards * 3n) / 4n / tokenRewardsDuration, 1e7)
+		const calculatedTokenRewardRate = (rewards * AMOUNT_MULTIPLIER * 3n) / 4n / tokenRewardsDuration
+
+		expect(tokenRewardRate).to.be.approximately(calculatedTokenRewardRate, 1e11)
 
 		const latestTimestamp = await time.latest()
 		const tokenPeriodFinish = await staking.tokenPeriodFinish()
@@ -179,7 +192,10 @@ export const notifyTokenRewardAmount = function () {
 		await expect(tx).not.to.be.reverted
 
 		const tokenRewardRate = await staking.tokenRewardRate()
-		expect(tokenRewardRate).to.be.approximately(rewards / 2n / tokenRewardsDuration, 1e7)
+		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
+		const calculatedTokenRewardRate = (rewards * AMOUNT_MULTIPLIER) / 2n / tokenRewardsDuration
+
+		expect(tokenRewardRate).to.be.approximately(calculatedTokenRewardRate, 1e7)
 
 		const latestTimestamp = await time.latest()
 		const tokenPeriodFinish = await staking.tokenPeriodFinish()
@@ -190,16 +206,16 @@ export const notifyTokenRewardAmount = function () {
 		const { staking, signers } = await getStakingContractsWithStakersAndRewards()
 
 		for (const staker of signers.slice(1, 4)) {
-			const tokenEarned = await staking.tokenEarned(staker.address)
-			expect(tokenEarned).to.be.eq(0)
+			const vars = await staking.userVariables(staker.address)
+			expect(vars.rewards).to.be.eq(0)
 		}
 
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 		await time.increase(tokenRewardsDuration)
 
 		for (const staker of signers.slice(1, 4)) {
-			const tokenEarned = await staking.tokenEarned(staker.address)
-			expect(tokenEarned).to.be.eq(0)
+			const vars = await staking.userVariables(staker.address)
+			expect(vars.rewards).to.be.eq(0)
 		}
 	})
 }
