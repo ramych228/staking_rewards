@@ -94,10 +94,10 @@ contract Staking is Ownable, ReentrancyGuard {
 			return nativeMultiplierStored;
 		}
 
-		return
-			nativeMultiplierStored +
-			(nativeMultiplierStored * (lastTimeNativeRewardApplicable() - lastNativeUpdateTime) * nativeRewardRate) /
-			(totalSupplyLP + totalSupplyBP + totalSupplyST);
+		uint256 totalShares = totalSupplyLP + totalSupplyBP + totalSupplyST;
+		uint256 timeDiff = lastTimeNativeRewardApplicable() - lastNativeUpdateTime;
+
+		return nativeMultiplierStored + (timeDiff * nativeMultiplierStored * nativeRewardRate) / totalShares;
 	}
 
 	function getTokenMultiplier() public view returns (uint256) {
@@ -105,27 +105,28 @@ contract Staking is Ownable, ReentrancyGuard {
 			return tokenMultiplierStored;
 		}
 
-		return
-			tokenMultiplierStored +
-			((lastTimeTokenRewardApplicable() - lastTokenUpdateTime) * nativeMultiplierStored * tokenRewardRate) /
-			(totalSupplyBP + totalSupplyLP + totalSupplyST);
+		uint256 totalShares = totalSupplyLP + totalSupplyBP + totalSupplyST;
+		uint256 timeDiff = lastTimeTokenRewardApplicable() - lastTokenUpdateTime;
+		return tokenMultiplierStored + (timeDiff * nativeMultiplierStored * tokenRewardRate) / totalShares;
 	}
 
 	function tokenEarned(address account) internal view returns (uint256) {
-		UserVariables memory userPreviousVariables = userVariables[account];
+		UserVariables memory variables = userVariables[account];
 
-		return
-			((userPreviousVariables.balanceLP + userPreviousVariables.balanceST + userPreviousVariables.balanceBP) *
-				(getTokenMultiplier() - userPreviousVariables.userTokenMultiplierPaid)) /
-			Math.max(userPreviousVariables.userNativeMultiplierPaid, INIT_MULTIPLIER_VALUE);
+		uint256 userShares = variables.balanceLP + variables.balanceBP + variables.balanceST;
+		uint256 multiplierDiff = getTokenMultiplier() - variables.userTokenMultiplierPaid;
+		uint256 divider = Math.max(variables.userNativeMultiplierPaid, INIT_MULTIPLIER_VALUE);
+
+		return (userShares * multiplierDiff) / divider;
 	}
 
 	function nativeEarned(address account) internal view returns (uint256) {
-		UserVariables memory userPreviousVariables = userVariables[account];
+		UserVariables memory variables = userVariables[account];
+
+		uint256 userShares = variables.balanceLP + variables.balanceBP + variables.balanceST;
+
 		return
-			((userPreviousVariables.balanceLP + userPreviousVariables.balanceST + userPreviousVariables.balanceBP) *
-				getNativeMultiplier()) /
-			Math.max(userPreviousVariables.userNativeMultiplierPaid, INIT_MULTIPLIER_VALUE);
+			(userShares * getNativeMultiplier()) / Math.max(variables.userNativeMultiplierPaid, INIT_MULTIPLIER_VALUE);
 	}
 
 	/* ========== MUTATIVE FUNCTIONS ========== */
