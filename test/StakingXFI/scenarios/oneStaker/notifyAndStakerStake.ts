@@ -63,6 +63,7 @@ export const notifyAndStakerStake = function () {
 
     it('notify Native reward and stake right after it', async function () {
         console.log("===========================> NEGA WAAAT TEST");
+        console.log("Most likely the problem with RR, the bigger it is -- the more we wasting in accuracy");
 
         const { signers, staking, rewardToken, stakingToken, nativeDuration } = await getStakingContractWithStakers()
         const staker = signers[1];
