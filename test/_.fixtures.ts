@@ -9,7 +9,6 @@ async function deployStaking() {
 
 	const signers = await ethers.getSigners()
 	const owner = signers[0]
-	const duration = 50n
 
 	const StakingRewards = await ethers.getContractFactory('Staking')
 	const staking = await StakingRewards.deploy(
@@ -24,7 +23,6 @@ async function deployStaking() {
 		staking,
 		signers,
 		owner,
-		duration,
 	}
 }
 
@@ -60,9 +58,9 @@ async function deployStakingWithStakersAndRewards() {
 }
 
 async function deployStakingWithStakers() {
-	const { rewardToken, stakingToken, staking, signers, owner, duration } = await loadFixture(deployStaking)
+	const { rewardToken, stakingToken, staking, signers, owner } = await loadFixture(deployStaking)
 
-	const amount = ethers.parseEther('100')
+	const amount = ethers.parseEther('10000000')
 
 	await rewardToken.mint(await staking.getAddress(), amount)
 	await rewardToken.mint(owner.address, amount)
@@ -75,13 +73,17 @@ async function deployStakingWithStakers() {
 	await stakingToken.connect(signers[2]).approve(await staking.getAddress(), amount)
 	await stakingToken.connect(signers[3]).approve(await staking.getAddress(), amount)
 
+	const tokenDuration = await staking.tokenRewardsDuration()
+	const nativeDuration = await staking.nativeRewardsDuration()
+
 	return {
 		rewardToken,
 		stakingToken,
 		staking,
 		owner,
 		signers,
-		duration,
+		tokenDuration,
+		nativeDuration,
 	}
 }
 

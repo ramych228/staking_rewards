@@ -125,9 +125,7 @@ export const multipleNotifies = async function () {
 
 		// FIRST STAKE
 		await staking.connect(staker).stake(stakeAmount)
-		console.log('hey')
 		await staking.notifyNativeRewardAmount(tokenRewardAmount, { value: tokenRewardAmount })
-		console.log('hey2')
 		await time.increaseTo((await staking.nativePeriodFinish()) - (duration / 2n + 1n))
 
 		const balanceChange = tokenRewardAmount / 2n
@@ -137,7 +135,6 @@ export const multipleNotifies = async function () {
 		for (let i = 0; i < 10; i++) {
 			// was 100
 			await staking.connect(staker).withdraw(stakeAmount / 200n)
-			// console.log(await staking.balanceLPOf(staker));
 		}
 
 		await time.increaseTo((await staking.nativePeriodFinish()) + 1000000n)

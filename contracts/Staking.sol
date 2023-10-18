@@ -94,10 +94,10 @@ contract Staking is Ownable, ReentrancyGuard {
 			return nativeMultiplierStored;
 		}
 
-		return
-			nativeMultiplierStored +
-			(nativeMultiplierStored * (lastTimeNativeRewardApplicable() - lastNativeUpdateTime) * nativeRewardRate) /
-			(totalSupplyLP + totalSupplyBP + totalSupplyST);
+		uint256 timeDiff = lastTimeNativeRewardApplicable() - lastNativeUpdateTime;
+		uint256 totalShares = totalSupplyLP + totalSupplyBP + totalSupplyST;
+
+		return nativeMultiplierStored + (nativeMultiplierStored * timeDiff * nativeRewardRate) / totalShares;
 	}
 
 	function getTokenMultiplier() public view returns (uint256) {
@@ -105,27 +105,32 @@ contract Staking is Ownable, ReentrancyGuard {
 			return tokenMultiplierStored;
 		}
 
-		return
-			tokenMultiplierStored +
-			((lastTimeTokenRewardApplicable() - lastTokenUpdateTime) * nativeMultiplierStored * tokenRewardRate) /
-			(totalSupplyBP + totalSupplyLP + totalSupplyST);
+		uint256 timeDiff = lastTimeTokenRewardApplicable() - lastTokenUpdateTime;
+		uint256 totalShares = totalSupplyLP + totalSupplyBP + totalSupplyST;
+
+		return tokenMultiplierStored + (nativeMultiplierStored * timeDiff * tokenRewardRate) / totalShares;
 	}
 
 	function tokenEarned(address account) internal view returns (uint256) {
-		UserVariables memory userPreviousVariables = userVariables[account];
+		UserVariables memory variables = userVariables[account];
 
-		return
-			((userPreviousVariables.balanceLP + userPreviousVariables.balanceST + userPreviousVariables.balanceBP) *
-				(getTokenMultiplier() - userPreviousVariables.userTokenMultiplierPaid)) /
-			Math.max(userPreviousVariables.userNativeMultiplierPaid, INIT_MULTIPLIER_VALUE);
+		uint256 userShares = variables.balanceLP + variables.balanceBP + variables.balanceST;
+		uint256 multiplierDiff = getTokenMultiplier() - variables.userTokenMultiplierPaid;
+		uint256 divider = Math.max(variables.userNativeMultiplierPaid, INIT_MULTIPLIER_VALUE);
+
+		return (userShares * multiplierDiff) / divider;
 	}
 
 	function nativeEarned(address account) internal view returns (uint256) {
-		UserVariables memory userPreviousVariables = userVariables[account];
-		return
-			((userPreviousVariables.balanceLP + userPreviousVariables.balanceST + userPreviousVariables.balanceBP) *
-				getNativeMultiplier()) /
-			Math.max(userPreviousVariables.userNativeMultiplierPaid, INIT_MULTIPLIER_VALUE);
+		UserVariables memory variables = userVariables[account];
+
+		uint256 userShares = variables.balanceLP + variables.balanceBP + variables.balanceST;
+
+		uint256 multiplierDiff = getNativeMultiplier();
+
+		uint256 divider = Math.max(variables.userNativeMultiplierPaid, INIT_MULTIPLIER_VALUE);
+
+		return (userShares * multiplierDiff) / divider;
 	}
 
 	/* ========== MUTATIVE FUNCTIONS ========== */
@@ -216,7 +221,7 @@ contract Staking is Ownable, ReentrancyGuard {
 
 		return (
 			userCurrentVariables.balanceLP / AMOUNT_MULTIPLIER,
-			userCurrentVariables.balanceST / AMOUNT_MULTIPLIER,
+			userCurrentVariables.balanceBP / AMOUNT_MULTIPLIER,
 			userCurrentVariables.balanceNC / AMOUNT_MULTIPLIER,
 			userCurrentVariables.balanceST / AMOUNT_MULTIPLIER,
 			userCurrentVariables.balanceVST / AMOUNT_MULTIPLIER
@@ -269,9 +274,11 @@ contract Staking is Ownable, ReentrancyGuard {
 		UserVariables memory userPreviousVariables = userVariables[account];
 		updateStoredVariables();
 
-		totalSupplyST +=
-			(lastTimeNativeRewardApplicable() - Math.min(lastTimeNativeRewardApplicable(), lastNativeUpdateTime)) *
-			nativeRewardRate;
+		if (totalSupplyLP != 0) {
+			totalSupplyST +=
+				(lastTimeNativeRewardApplicable() - Math.min(lastTimeNativeRewardApplicable(), lastNativeUpdateTime)) *
+				nativeRewardRate;
+		}
 
 		lastNativeUpdateTime = lastTimeNativeRewardApplicable();
 		lastTokenUpdateTime = lastTimeTokenRewardApplicable();
@@ -294,6 +301,7 @@ contract Staking is Ownable, ReentrancyGuard {
 		UserVariables memory userPreviousVariables
 	) internal view returns (UserVariables memory) {
 		userPreviousVariables.rewards += tokenEarned(account);
+
 		userPreviousVariables.balanceST =
 			nativeEarned(account) -
 			userPreviousVariables.balanceLP -
