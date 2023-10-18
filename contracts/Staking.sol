@@ -108,10 +108,10 @@ contract Staking is Ownable, ReentrancyGuard {
 			return nativeMultiplierStored;
 		}
 
-		return
-			nativeMultiplierStored +
-			(nativeMultiplierStored * (lastTimeNativeRewardApplicable() - lastNativeUpdateTime) * nativeRewardRate) /
-			(_totalSupplyLP + _totalSupplyBP + _totalSupplyST);
+		uint256 timeDiff = lastTimeNativeRewardApplicable() - lastNativeUpdateTime;
+		uint256 totalShares = _totalSupplyLP + _totalSupplyBP + _totalSupplyST;
+
+		return nativeMultiplierStored + (nativeMultiplierStored * timeDiff * nativeRewardRate) / totalShares;
 	}
 
 	function getTokenMultiplier() public view returns (uint256) {
@@ -119,27 +119,32 @@ contract Staking is Ownable, ReentrancyGuard {
 			return tokenMultiplierStored;
 		}
 
-		return
-			tokenMultiplierStored +
-			((lastTimeTokenRewardApplicable() - lastTokenUpdateTime) * nativeMultiplierStored * tokenRewardRate) /
-			(_totalSupplyBP + _totalSupplyLP + _totalSupplyST);
+		uint256 timeDiff = lastTimeTokenRewardApplicable() - lastTokenUpdateTime;
+		uint256 totalShares = _totalSupplyLP + _totalSupplyBP + _totalSupplyST;
+
+		return tokenMultiplierStored + (nativeMultiplierStored * timeDiff * tokenRewardRate) / totalShares;
 	}
 
 	function tokenEarned(address account) internal view returns (uint256) {
-		UserVariables storage userPreviousVariables = userVariables[account];
+		UserVariables storage variables = userVariables[account];
 
-		return
-			((userPreviousVariables.balanceLP + userPreviousVariables.balanceST + userPreviousVariables.balanceBP) *
-				(getTokenMultiplier() - userPreviousVariables.userTokenMultiplierPaid)) /
-			Math.max(userPreviousVariables.userNativeMultiplierPaid, INIT_MULTIPLIER_VALUE);
+		uint256 userShares = variables.balanceLP + variables.balanceBP + variables.balanceST;
+		uint256 multiplierDiff = getTokenMultiplier() - variables.userTokenMultiplierPaid;
+		uint256 divider = Math.max(variables.userNativeMultiplierPaid, INIT_MULTIPLIER_VALUE);
+
+		return (userShares * multiplierDiff) / divider;
 	}
 
 	function nativeEarned(address account) internal view returns (uint256) {
-		UserVariables storage userPreviousVariables = userVariables[account];
-		return
-			((userPreviousVariables.balanceLP + userPreviousVariables.balanceST + userPreviousVariables.balanceBP) *
-				getNativeMultiplier()) /
-			Math.max(userPreviousVariables.userNativeMultiplierPaid, INIT_MULTIPLIER_VALUE);
+		UserVariables storage variables = userVariables[account];
+
+		uint256 userShares = variables.balanceLP + variables.balanceBP + variables.balanceST;
+
+		uint256 multiplierDiff = getNativeMultiplier();
+
+		uint256 divider = Math.max(variables.userNativeMultiplierPaid, INIT_MULTIPLIER_VALUE);
+
+		return (userShares * multiplierDiff) / divider;
 	}
 
 	/* ========== MUTATIVE FUNCTIONS ========== */
@@ -230,7 +235,7 @@ contract Staking is Ownable, ReentrancyGuard {
 
 		return (
 			userCurrentVariables.balanceLP / AMOUNT_MULTIPLIER,
-			userCurrentVariables.balanceST / AMOUNT_MULTIPLIER,
+			userCurrentVariables.balanceBP / AMOUNT_MULTIPLIER,
 			userCurrentVariables.balanceNC / AMOUNT_MULTIPLIER,
 			userCurrentVariables.balanceST / AMOUNT_MULTIPLIER,
 			userCurrentVariables.balanceVST / AMOUNT_MULTIPLIER
@@ -288,9 +293,11 @@ contract Staking is Ownable, ReentrancyGuard {
 
 		uint256 _lastTimeNativeRewardApplicable = lastTimeNativeRewardApplicable();
 
-		_totalSupplyST +=
-			(_lastTimeNativeRewardApplicable - Math.min(_lastTimeNativeRewardApplicable, lastNativeUpdateTime)) *
-			nativeRewardRate;
+		if (_totalSupplyLP != 0) {
+			_totalSupplyST +=
+				(lastTimeNativeRewardApplicable() - Math.min(lastTimeNativeRewardApplicable(), lastNativeUpdateTime)) *
+				nativeRewardRate;
+		}
 
 		lastNativeUpdateTime = _lastTimeNativeRewardApplicable;
 		lastTokenUpdateTime = lastTimeTokenRewardApplicable();
