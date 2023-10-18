@@ -49,8 +49,7 @@ export const notifyTwoTimes = function () {
         // ------------- STAKE ----------------------
         await staking.connect(staker).stake(stakeAmount);
 
-        // await time.increaseTo(await staking.nativePeriodFinish() + 100n);
-        await time.increaseTo(await staking.nativePeriodFinish() + 10000n);
+        await time.increaseTo(await staking.nativePeriodFinish() + 1n);
 
         // ------------- EXIT -----------------------
         await staking.connect(staker).exit();
