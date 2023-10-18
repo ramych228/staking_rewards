@@ -94,7 +94,7 @@ export const notifyAndStakerStake = function () {
 			const { signers, staking, nativeDuration } = await getStakingContractWithStakers()
 			const staker = signers[1]
 			const tokenNativeAmount = ethers.parseEther('9999')
-			const stakeAmount = ethers.parseEther('0.1')
+			const stakeAmount = 1928819444444444n
 
 			// ------------- ACTION ---------------------
 
@@ -102,6 +102,10 @@ export const notifyAndStakerStake = function () {
 
 			await staking.notifyNativeRewardAmount(tokenNativeAmount, { value: tokenNativeAmount })
 			await staking.connect(staker).stake(stakeAmount)
+			const totalSupplyST = (await staking.totalSupplyST()) / 10000n
+			1928819444444444
+			console.log('Total supply ST', totalSupplyST)
+			console.log('Balance ST of staker', await staking.balanceSTOf(staker.address))
 
 			await time.increase(nativeDuration)
 
