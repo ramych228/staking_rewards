@@ -31,14 +31,12 @@ export const withdraw = function () {
 
 		const amounts = [1e18, 2e18, 1e9]
 
-		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
-
 		for (const [i, amount] of amounts.entries()) {
-			const totalSupplyBefore = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
+			const totalSupplyBefore = await staking.totalSupplyLP()
 
 			await staking.connect(signers[i + 1]).withdraw(BigInt(amount))
 
-			const totalSupplyAfter = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
+			const totalSupplyAfter = await staking.totalSupplyLP()
 
 			expect(totalSupplyAfter).to.be.eq(totalSupplyBefore - BigInt(amount))
 		}
@@ -145,7 +143,6 @@ export const withdraw = function () {
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 		await time.increase(tokenRewardsDuration / 3n)
 
-		const balance = await staking.balanceLPOf(signers[1].address)
 		await staking.connect(signers[1]).exit()
 
 		const rewardsEarned = await rewardToken.balanceOf(signers[1])
@@ -178,7 +175,7 @@ export const withdraw = function () {
 		await staking.connect(signers[3]).getReward()
 
 		const balanceLP = await staking.balanceLPOf(signers[3].address)
-		const totalSupplyLP = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
+		const totalSupplyLP = await staking.totalSupplyLP()
 		const additionalEarnedRewards = (rewards * balanceLP) / totalSupplyLP / 2n
 
 		const earnedRewardsAfterSomeTime = await rewardToken.balanceOf(signers[3])

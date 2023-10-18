@@ -76,10 +76,8 @@ export const getReward = function () {
 		await staking.notifyTokenRewardAmount(rewards)
 		await time.increase(tokenRewardsDuration)
 
-		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
 		const userShares = await staking.balanceLPOf(signers[1].address)
-		const totalShares = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
-		const userRewards = (rewards * userShares) / totalShares
+		const totalShares = await staking.totalSupplyLP()
 
 		const oldBalanceOfStaking = await rewardToken.balanceOf(await staking.getAddress())
 

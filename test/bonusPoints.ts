@@ -54,7 +54,6 @@ export const bonusPoints = function () {
 
 		/* === Initialize rewards === */
 
-		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
 		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
@@ -73,7 +72,7 @@ export const bonusPoints = function () {
 		const bonusPoints3 = await staking.balanceBPOf(signers[3].address)
 
 		// const totalSupplyLP = await staking.totalSupplyLP()
-		const totalBonusPoints = (await staking.totalSupplyBP()) / AMOUNT_MULTIPLIER
+		const totalBonusPoints = await staking.totalSupplyBP()
 
 		const sumOfBonusPoints = bonusPoints1 + bonusPoints2 + bonusPoints3
 
@@ -85,7 +84,6 @@ export const bonusPoints = function () {
 
 		/* === Initialize rewards === */
 
-		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
 		const rewards = await rewardToken.balanceOf(await staking.getAddress())
 		const tokenRewardsDuration = await staking.tokenRewardsDuration()
 
@@ -99,7 +97,7 @@ export const bonusPoints = function () {
 		const stake2Initial = await staking.balanceLPOf(signers[2].address)
 		const stake3Initial = await staking.balanceLPOf(signers[3].address)
 
-		const totalSupplyBefore = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
+		const totalSupplyBefore = await staking.totalSupplyLP()
 
 		const amount = BigInt(1e18)
 		await staking.connect(signers[1]).stake(amount * 2n)
@@ -110,7 +108,7 @@ export const bonusPoints = function () {
 		const stake2End = await staking.balanceLPOf(signers[2].address)
 		const stake3End = await staking.balanceLPOf(signers[3].address)
 
-		const totalSupplyAfter = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
+		const totalSupplyAfter = await staking.totalSupplyLP()
 
 		/* === Skip rewards distribution time === */
 
@@ -126,7 +124,7 @@ export const bonusPoints = function () {
 
 		/* === Checking total calculations in contract === */
 
-		const totalBonusPoints = (await staking.totalSupplyBP()) / AMOUNT_MULTIPLIER
+		const totalBonusPoints = await staking.totalSupplyBP()
 
 		const sumOfBonusPoints = bonusPoints1 + bonusPoints2 + bonusPoints3
 

@@ -23,10 +23,8 @@ export const complexScenario = async function () {
 		/* --- 1/3 of rewards duration --- */
 
 		let stakeAmount1Staker1Period = BigInt(1e18)
-		let stakeAmount2Staker1Period = BigInt(2e18)
-		let stakeAmount3Staker1Period = BigInt(3e18)
 
-		const totalShares1Period = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
+		const totalShares1Period = await staking.totalSupplyLP()
 
 		let staker1Shares1Period = await staking.balanceLPOf(signers[1].address)
 		let staker2Shares1Period = await staking.balanceLPOf(signers[2].address)
@@ -65,7 +63,6 @@ export const complexScenario = async function () {
 
 		let stakeAmount1Staker2Period = BigInt(2e18)
 		let stakeAmount2Staker2Period = BigInt(1e18)
-		let stakeAmount3Staker2Period = BigInt(5e18)
 
 		await staking.connect(signers[1]).stake(BigInt(1e18))
 		await staking.connect(signers[2]).withdraw(BigInt(1e18))
@@ -214,14 +211,10 @@ export const complexScenario = async function () {
 	})
 
 	it.skip('Ramil`s test', async function () {
-		const yearInSeconds = BigInt(365 * 24 * 60 * 60)
-
 		// Disabled to ignore traces from fixture
 		hardhat.tracer.enabled = false
-		const { signers, staking, rewardToken } = await getStakingContractsWithStakersAndRewards()
+		const { signers, staking } = await getStakingContractsWithStakersAndRewards()
 		hardhat.tracer.enabled = true
-
-		const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
 
 		// Erase state from fixture
 		await staking.connect(signers[1]).exit()
@@ -243,9 +236,6 @@ export const complexScenario = async function () {
 		11.785714285714285714
 		await staking.connect(signers[1]).getReward()
 		await staking.connect(signers[2]).getReward()
-
-		const reward1 = await staking.balanceSTOf(signers[1].address)
-		const reward2 = await staking.balanceSTOf(signers[2].address)
 	})
 
 	it('Complex scenario on Native Reward', async function () {
@@ -380,7 +370,6 @@ export const complexScenario = async function () {
 
 		async function testNativeDistribution(nativeRewardDuration: number, rewardsDistribution: any) {
 			const { staking, signers, rewardToken } = await deployStaking(0, nativeRewardDuration)
-			const AMOUNT_MULTIPLIER = await staking.AMOUNT_MULTIPLIER()
 
 			const rewards = await rewardToken.balanceOf(await staking.getAddress())
 			const nativeRewardsDuration = await staking.nativeRewardsDuration()
@@ -391,14 +380,6 @@ export const complexScenario = async function () {
 			/* --- 1/3 of rewards duration --- */
 
 			let stakeAmount1Staker1Period = BigInt(1e18)
-			let stakeAmount2Staker1Period = BigInt(2e18)
-			let stakeAmount3Staker1Period = BigInt(3e18)
-
-			const totalShares1Period = (await staking.totalSupplyLP()) / AMOUNT_MULTIPLIER
-
-			let staker1Shares1Period = await staking.balanceLPOf(signers[1].address)
-			let staker2Shares1Period = await staking.balanceLPOf(signers[2].address)
-			let staker3Shares1Period = await staking.balanceLPOf(signers[3].address)
 
 			await time.increase(nativeRewardsDuration / 3n)
 
@@ -425,7 +406,6 @@ export const complexScenario = async function () {
 
 			let stakeAmount1Staker2Period = BigInt(2e18)
 			let stakeAmount2Staker2Period = BigInt(1e18)
-			let stakeAmount3Staker2Period = BigInt(5e18)
 
 			await staking.connect(signers[1]).stake(BigInt(1e18))
 			await staking.connect(signers[2]).withdraw(BigInt(1e18))
@@ -523,7 +503,7 @@ export const complexScenario = async function () {
 			console.log('Actual Reward For 2 Staker', reward2Staker)
 			console.log('Actual Reward For 3 Staker', reward3Staker)
 
-			const rewardBalanceOfContract = (await staking.totalSupplyST()) / AMOUNT_MULTIPLIER
+			const rewardBalanceOfContract = await staking.totalSupplyST()
 
 			// Contract distributed almost all the rewards
 			const error = BigInt(1e14)
