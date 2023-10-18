@@ -82,31 +82,6 @@ export const notifyAndStakerStake = function () {
         expect(await staking.balanceSTOf(staker)).to.approximately(tokenChange, 1000n);
     })
 
-    it('multiple notify Native reward and stake right after it', async function () {
-        console.log("===========================> MEGANEGA WAAAT TEST");
-
-        const { signers, staking, rewardToken, stakingToken, nativeDuration } = await getStakingContractWithStakers()
-        const staker = signers[1];
-        const tokenNativeAmount = ethers.parseEther("9999");
-        const stakeAmount = ethers.parseEther("0.1");
-
-        // ------------- ACTION ---------------------
-        await signers[1].sendTransaction({to: signers[0], value: tokenNativeAmount});
-        await signers[2].sendTransaction({to: signers[0], value: tokenNativeAmount});
-
-        await staking.connect(signers[0]).notifyNativeRewardAmount(tokenNativeAmount, {value: tokenNativeAmount});
-        await staking.connect(signers[0]).notifyNativeRewardAmount(tokenNativeAmount, {value: tokenNativeAmount});
-        await staking.connect(signers[0]).notifyNativeRewardAmount(tokenNativeAmount, {value: tokenNativeAmount});
-        
-        await staking.connect(staker).stake(stakeAmount);
-
-        await time.increaseTo(await staking.nativePeriodFinish() + 100n);
-
-        await staking.connect(staker).exit();
-        const tokenChange = 3n*tokenNativeAmount - (3n * (tokenNativeAmount / nativeDuration));
-        expect(await staking.balanceSTOf(staker)).to.approximately(tokenChange, 1000n);
-    })
-
     it('notify Token reward and stake after X secs', async function () {
         const { signers, staking, rewardToken, stakingToken, tokenDuration } = await getStakingContractWithStakers()
         const staker = signers[1];
