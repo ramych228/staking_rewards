@@ -9,7 +9,7 @@ import { sign } from 'crypto'
 
 export const notifyTwoTimes = function () {
     it("notify 4 times at almost the same time", async function(){
-        const { signers, staking, rewardToken, stakingToken, duration } = await getStakingContractWithStakers()
+        const { signers, staking, rewardToken, stakingToken, tokenDuration } = await getStakingContractWithStakers()
         const staker = signers[1];
         const tokenRewardAmount1 = ethers.parseEther("1");
         const tokenRewardAmount2 = ethers.parseEther("3");
@@ -17,7 +17,7 @@ export const notifyTwoTimes = function () {
 
         // ----------- ACTION ---------------
         await staking.connect(staker).stake(tokenStakeAmount);
-        const periodFinish = (await time.latest()) + Number(duration);
+        const periodFinish = (await time.latest()) + Number(tokenDuration);
         await staking.notifyTokenRewardAmount(tokenRewardAmount1);
         await staking.notifyTokenRewardAmount(tokenRewardAmount1);
         await staking.notifyTokenRewardAmount(tokenRewardAmount1);
@@ -32,7 +32,7 @@ export const notifyTwoTimes = function () {
     })
 
     it("notify 1 and notify 2 at almost the same time", async function(){
-        const { signers, staking, rewardToken, stakingToken, duration } = await getStakingContractWithStakers()
+        const { signers, staking, rewardToken, stakingToken, tokenDuration } = await getStakingContractWithStakers()
         const staker = signers[1];
         const tokenRewardAmount1 = ethers.parseEther("1");
         const tokenRewardAmount2 = ethers.parseEther("3");
@@ -40,7 +40,7 @@ export const notifyTwoTimes = function () {
 
         // ----------- ACTION ---------------
         await staking.connect(staker).stake(tokenStakeAmount);
-        const periodFinish = (await time.latest()) + Number(duration);
+        const periodFinish = (await time.latest()) + Number(tokenDuration);
         await staking.notifyTokenRewardAmount(tokenRewardAmount1);
         await staking.notifyTokenRewardAmount(tokenRewardAmount2);
 
@@ -53,7 +53,7 @@ export const notifyTwoTimes = function () {
     })
 
     it("notify 1 and after X secs notify 2", async function(){
-        const { signers, staking, rewardToken, stakingToken, duration } = await getStakingContractWithStakers()
+        const { signers, staking, rewardToken, stakingToken, tokenDuration } = await getStakingContractWithStakers()
         const staker = signers[1];
         const tokenRewardAmount1 = ethers.parseEther("1");
         const tokenRewardAmount2 = ethers.parseEther("3");
@@ -61,10 +61,10 @@ export const notifyTwoTimes = function () {
 
         // ----------- ACTION ---------------
         await staking.connect(staker).stake(tokenStakeAmount);
-        const periodFinish = (await time.latest()) + Number(duration);
+        const periodFinish = (await time.latest()) + Number(tokenDuration);
         await staking.notifyTokenRewardAmount(tokenRewardAmount1);
 
-        await time.increaseTo(await staking.tokenPeriodFinish() - ((duration / 2n) + 1n));
+        await time.increaseTo(await staking.tokenPeriodFinish() - ((tokenDuration / 2n) + 1n));
         await staking.connect(staker).getReward()
 
         const balanceChange = tokenRewardAmount1 / 2n;
@@ -72,7 +72,7 @@ export const notifyTwoTimes = function () {
         expect(await staking.tokenPeriodFinish()).to.approximately(periodFinish, 5n);
 
         await staking.notifyTokenRewardAmount(tokenRewardAmount2);
-        expect(await staking.tokenPeriodFinish()).to.approximately(periodFinish + Number(duration), 30n);
+        expect(await staking.tokenPeriodFinish()).to.approximately(periodFinish + Number(tokenDuration), 30n);
 
         await time.increase(await staking.tokenPeriodFinish() + 1n);
         await staking.connect(staker).getReward();
