@@ -10,7 +10,7 @@ import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 
 /// @title Complicated staking contract
 /// @author Monty C. Python
-contract Staking is Ownable, ReentrancyGuard {
+contract Staking is Ownable, ReentrancyGuard, ERC20 {
 	using SafeERC20 for IERC20;
 
 	/* ========== CONSTANTS ========== */
@@ -61,7 +61,13 @@ contract Staking is Ownable, ReentrancyGuard {
 
 	/* ========== CONSTRUCTOR ========== */
 
-	constructor(address _rewardsDistribution, address _rewardsToken, address _stakingToken) {
+	constructor(
+		address _rewardsDistribution,
+		address _rewardsToken,
+		address _stakingToken,
+		string memory _name,
+		string memory _symbol
+	) ERC20(_name, _symbol) {
 		rewardsToken = IERC20(_rewardsToken);
 		stakingToken = IERC20(_stakingToken);
 		transferOwnership(_rewardsDistribution);
@@ -153,6 +159,7 @@ contract Staking is Ownable, ReentrancyGuard {
 		require(amount != 0, 'Cannot stake 0');
 
 		stakingToken.safeTransferFrom(msg.sender, address(this), amount);
+		_mint(msg.sender, amount);
 
 		amount *= AMOUNT_MULTIPLIER;
 		userVariables[msg.sender].balanceLP += amount;
@@ -179,6 +186,8 @@ contract Staking is Ownable, ReentrancyGuard {
 
 	function withdraw(uint256 amount) public nonReentrant updateReward(msg.sender) {
 		require(amount != 0, 'Cannot withdraw 0');
+		require(balanceOf(msg.sender) >= amount, 'No staked tokens on balance');
+		_burn(msg.sender, amount);
 
 		UserVariables storage variables = userVariables[msg.sender];
 
@@ -295,7 +304,7 @@ contract Staking is Ownable, ReentrancyGuard {
 
 		if (_totalSupplyLP != 0) {
 			_totalSupplyST +=
-				(lastTimeNativeRewardApplicable() - Math.min(lastTimeNativeRewardApplicable(), lastNativeUpdateTime)) *
+				(_lastTimeNativeRewardApplicable - Math.min(_lastTimeNativeRewardApplicable, lastNativeUpdateTime)) *
 				nativeRewardRate;
 		}
 
