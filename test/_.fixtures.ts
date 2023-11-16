@@ -14,7 +14,9 @@ async function deployStaking() {
 	const staking = await StakingRewards.deploy(
 		owner.address,
 		await rewardToken.getAddress(),
-		await stakingToken.getAddress()
+		await stakingToken.getAddress(),
+		'Staked LP XFI',
+		'sLPXFI'
 	)
 
 	return {

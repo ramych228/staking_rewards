@@ -10,6 +10,7 @@ import { bonusPoints } from './bonusPoints'
 import { notifyNativeRewardAmount } from './notifyNativeRewardAmount'
 import { vest } from './vest'
 import { getNativeReward } from './getNativeReward'
+import { LST } from './lst'
 
 describe('StakingXFI', function () {
 	/* --- Fixtures --- */
@@ -31,22 +32,11 @@ describe('StakingXFI', function () {
 	describe('notifyTokenRewardAmount', notifyTokenRewardAmount)
 	describe('notifyNativeRewardAmount', notifyNativeRewardAmount)
 
+	describe.only('LST', LST)
+
 	/* --- Modifier --- */
 
 	describe('updateReward', updateReward)
-
-	/* --- Modified ERC20 Logic --- */
-
-	describe('totalSupply', async function () {
-		// changes on stake/unstake
-	})
-	describe('transfer', async function () {
-		// non-trasferable
-	})
-	describe('transferFrom', async function () {})
-	describe('allowance', async function () {
-		// non-trasferable
-	})
 
 	/* --- Scenarios --- */
 
