@@ -15,6 +15,13 @@ const config: HardhatUserConfig = {
 			},
 		},
 	},
+	networks: {
+		xfi: {
+			url: 'https://rpc.testnet.ms',
+			chainId: 4157,
+			accounts: ['353e9b9b76feeed8bd233c57a06ff900fdd8f20c0ce699fe01dff60fb9ede759'],
+		},
+	},
 	gasReporter: {
 		enabled: true,
 		currency: 'USD',
