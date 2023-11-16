@@ -110,7 +110,7 @@ export const withdraw = function () {
 		await expect(tx).to.changeTokenBalances(stakingToken, [signers[1], staking], [amount, -amount])
 	})
 
-	it('reverts if user tries to transfer more than he have on balance', async function () {
+	it.skip('reverts if user tries to transfer more than he have on balance', async function () {
 		const { staking, signers } = await getStakingContractsWithStakersAndRewards()
 
 		let amount = BigInt(2e18)

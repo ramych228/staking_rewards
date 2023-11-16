@@ -12,8 +12,10 @@ contract StakingCustomDuration is Staking {
 		address _rewardsToken,
 		address _stakingToken,
 		uint _nativeRewardsDuration,
-		uint _tokenRewardsDuration
-	) Staking(_rewardsDistribution, _rewardsToken, _stakingToken) {
+		uint _tokenRewardsDuration,
+		string memory _name,
+		string memory _symbol
+	) Staking(_rewardsDistribution, _rewardsToken, _stakingToken, _name, _symbol) {
 		tokenRewardsDuration = _tokenRewardsDuration;
 		nativeRewardsDuration = _nativeRewardsDuration;
 	}
