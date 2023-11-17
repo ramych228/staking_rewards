@@ -28,6 +28,21 @@ const config: HardhatUserConfig = {
 		gasPrice: 30,
 		coinmarketcap: process.env.COINMARKETCAP,
 	},
+	etherscan: {
+		apiKey: {
+			xfi: 'no-key',
+		},
+		customChains: [
+			{
+				network: 'xfi',
+				chainId: 4157,
+				urls: {
+					apiURL: 'https://scan.testnet.ms/api',
+					browserURL: 'https://scan.testnet.ms/',
+				},
+			},
+		],
+	},
 }
 
 export default config
